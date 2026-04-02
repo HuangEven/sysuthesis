@@ -1,0 +1,239 @@
+% !TEX root = ../main.tex
+
+\chapter{相关研究工作与关键技术基础}
+
+\section{异常检测方法研究现状}
+
+异常检测的目标是在大量正常样本中识别出少量偏离总体分布的异常对象，其研究长期围绕距离型、密度型、统计型、集成型以及深度学习型方法展开\citep{aggarwal2017outlier,breunig2000lof}。在金融场景中，异常检测对象既可能是单笔交易，也可能是账户行为、支付路径或多实体交互模式，因此检测方法不仅需要具有较好的识别能力，还需要在大规模条件下保持可执行性。对于本文关注的金融大规模数据场景而言，方法本身的分类固然重要，但真正决定系统是否可部署的，往往是方法背后的时间复杂度、空间复杂度和资源组织方式。
+
+距离型异常检测方法通过样本间距离或近邻结构定义异常程度，是金融异常检测研究中最常见的一类方法\citep{aggarwal2017outlier,angiulli2002fast}。例如，基于 $k$ 近邻的异常检测通常根据样本与其第 $k$ 个近邻的距离、平均近邻距离或近邻集合结构对异常性进行评分；基于角度和连通性的距离型方法则进一步利用样本与局部邻域之间的几何关系刻画偏离程度。该类方法的优势在于具有较好的可解释性，与金融业务中``交易行为偏离正常模式''的直观理解高度一致。然而，这类方法在大规模场景下面临显著复杂度问题。TOD 原始论文在对常见表格型异常检测算法进行整理时指出，多种 proximity-based 方法在朴素实现下至少具有二次时间和空间复杂度，这直接限制了其在大规模、近实时场景中的落地能力\citep{zhao2022tod}。因此，距离型异常检测虽然在理论和业务解释层面都具有吸引力，但若缺少候选压缩与系统加速机制，其在金融大规模场景中的部署仍然存在明显障碍。
+
+密度型异常检测方法通常从局部样本密度差异出发判断异常程度，其典型代表是 LOF 类方法\citep{breunig2000lof}。与简单距离阈值法相比，密度型方法能够区分``处于稀疏区域但整体合理的正常点''和``相对于其邻域显著偏离的异常点''，因此在局部模式复杂、异常呈相对偏移而非绝对偏移的金融数据中具有一定优势。然而，密度型方法往往依赖近邻搜索、局部可达密度估计以及邻域间多次聚合，因此其在大规模场景中同样会面临显著的时间与空间压力。对于高维、多源和强时序性的金融数据而言，如果系统仍采用全量近邻访问和 CPU 主导的邻域组织方式，则密度型方法的理论优势很容易被系统开销所抵消。
+
+统计型异常检测方法通过边缘分布、累积分布、概率估计或低阶统计量衡量样本偏离程度\citep{aggarwal2017outlier,zhao2022tod}。这类方法在结构化表格数据上具有实现简单、运行稳定的优点，尤其适用于处理某些单字段异常、分布尾部样本或多字段联合分布不平衡现象。然而，金融数据的异常模式往往不仅体现在单一字段的极端值上，还可能体现为多字段组合、时间上下文、设备行为和路径关系的复杂耦合。因此，单纯依赖统计型方法虽然能够作为基准或辅助模块存在，但很难单独承担整个金融异常检测系统的核心角色。更重要的是，当统计特征需要在滑动时间窗、分组窗口或账户层级上批量构造时，系统仍然需要面对大规模数据处理和资源调度问题。
+
+集成型方法和深度学习型方法则试图通过多模型组合或表示学习提升检测能力\citep{aggarwal2017outlier,zhao2022tod}。前者通过多个检测器的加权或投票减弱单一方法的偏差，后者通过自编码器、图神经网络或序列模型自动学习复杂模式。对于金融大规模数据而言，这些方法在理论上具备较强的灵活性，但在系统实现层面并不天然优于距离型或近邻型方法。一方面，集成会显著提高系统推理成本；另一方面，深度模型虽然表达能力强，但在可解释性、在线部署复杂度和多阶段候选筛选配合方面往往需要额外设计。本文因此不以新模型为研究重点，而是围绕``如何让候选召回与异常评分协同运行、如何让系统具备近实时吞吐能力''这一问题展开系统优化。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 2-1 异常检测方法分类图。} 该图展示距离型、密度型、统计型、集成型和深度学习型方法的关系及代表算法，用于帮助读者快速建立异常检测方法的全局视图。
+  \item \textbf{表 2-1 各类异常检测方法复杂度与系统适配性比较表。} 表中列出代表方法、时间复杂度、空间复杂度、可解释性、是否适合大规模金融场景等，用于突出本文选择``候选召回 + 张量化评分''路线的必要性。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2_1_anomaly_detection_taxonomy.drawio.png}
+  \caption{异常检测方法分类图}
+  \label{fig:ad-taxonomy}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{各类异常检测方法复杂度与系统适配性比较}
+  \label{tab:ad-complexity}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~2-1}
+\end{table}
+
+\section{TOD/PyTOD 的方法学基础}
+
+为解决传统异常检测算法难以直接迁移到 GPU 并高效扩展的问题，TOD 提出了将异常检测过程抽象为一组基础张量算子和功能算子的系统方法，并在现代深度学习基础设施上执行这些算子\citep{zhao2022tod}。TOD 将异常检测视为张量计算问题，而不是为每一种算法分别编写定制化 GPU 实现。其系统总览明确指出，TOD 的核心包括三部分：一是将异常检测算法分解为 basic tensor operators 与 functional operators 的编程模型；二是通过 provable quantization 降低时间和内存开销；三是通过 automatic batching 与 multi-GPU support 支撑大规模计算。这一设计使得异常检测系统在面对大规模数据时不再完全依赖 CPU 侧的传统数值运算路径，而可以利用 GPU 的并行能力与深度学习基础设施的资源管理能力。
+
+TOD/PyTOD 的重要意义在于，它证明了大量经典异常检测方法并不是只能以``CPU + 手工优化''的方式实现，而是可以统一映射到 GPU 张量执行语义中。TOD 论文展示了多种经典异常检测方法与张量算子的对应关系，例如 kNN、LOF、HBOS、COPOD 等方法都可以由 \texttt{cdist}、\texttt{topk}、\texttt{agg}、\texttt{histogram} 等算子组合而成。这种抽象降低了实现复杂度，也为本文将 PyTOD 作为异常评分主干提供了直接基础。对于金融异常检测系统来说，PyTOD 的价值不在于它已经解决了候选召回和多阶段数据路径问题，而在于它为异常评分阶段提供了一套统一、可复用、可 GPU 化执行的实现框架。
+
+在扩展能力方面，TOD 特别强调 automatic batching 和 multi-GPU support 的作用。论文指出，现代 GPU 在显存容量上通常远小于 CPU 内存，而许多异常检测算法涉及全样本或近全样本操作，因此必须通过批处理将大型运算拆解为可管理的子任务，再分发到单 GPU 或多 GPU 上执行。这一点对于本文尤其关键：虽然 PyTOD 并不直接提供高吞吐候选召回能力，但它为本文后续构建``候选缩减后的异常评分主干''提供了充分的技术基础。换言之，本文选择 PyTOD，并不是将其视作完整的大规模异常检测系统，而是将其定位为\textbf{候选集上的高效 GPU 异常评分骨架}。
+
+从实验结果看，TOD/PyTOD 也体现出较强的现实价值。论文报告其在多个真实数据集上平均比 PyOD 快一个数量级以上，说明只要执行链路组织得当，GPU 异常评分主干完全可以成为金融大规模异常检测系统中的核心计算组件\citep{zhao2022tod}。不过，TOD/PyTOD 的公开能力同样显示其边界：它主要解决``如何高效执行异常评分''，而并不直接解决``如何在海量样本中筛选候选''``如何处理 out-of-core ANN 检索''``如何组织跨阶段数据路径''这些系统级问题。因此，本文将 PyTOD 与 FlashANNS 融合，正是为了补齐这一能力断层。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 2-2 TOD/PyTOD 系统总览图。} 图中展示编程模型、基础张量算子、功能算子、自动批处理与多 GPU 支持的层次关系，用于说明 PyTOD 在本文中的角色是``评分主干''而非完整系统。
+  \item \textbf{图 2-3 典型异常检测算法到张量算子的映射图。} 以 kNN、LOF、COPOD 为例，展示它们如何映射到 \texttt{cdist}、\texttt{topk}、\texttt{agg} 等算子，用于帮助读者理解 PyTOD 的方法学基础。
+  \item \textbf{表 2-2 PyTOD 在本文中的能力边界表。} 表中列出 PyTOD 已支持能力、可直接复用能力、未覆盖能力和本文中的补强方式，用于为第三章和第四章的系统融合设计做铺垫。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2-2.png}
+  \caption{TOD/PyTOD 系统总览图}
+  \label{fig:tod-overview}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2-3.png}
+  \caption{典型异常检测算法到张量算子的映射}
+  \label{fig:algo-to-ops}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{PyTOD 在本文中的能力边界}
+  \label{tab:pytod-boundary}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\linewidth}{@{}p{1.9cm}>
+    {\raggedright\arraybackslash}X>
+    {\raggedright\arraybackslash}X>
+    {\raggedright\arraybackslash}X@{}}
+    \toprule
+    \textbf{能力类别} & \textbf{PyTOD 已支持 / 可直接复用内容} & \textbf{本文未直接覆盖的能力边界} & \textbf{本文中的补强方式} \\
+    \midrule
+    方法学抽象 & 将异常检测算法抽象为 \textbf{BTOs + FOs}，支持将多种经典 OD 方法映射到 GPU 张量执行语义 & 不负责候选召回与两阶段检索--评分协同 & 由 \textbf{FlashANNS} 提供候选召回，PyTOD 只承担异常评分主干 \\
+    \\
+    异常评分执行 & 支持 kNN、LOF、HBOS、COPOD、ECOD、PCA 等多类 OD 算法的 GPU 化评分 & 不直接处理金融业务场景下的多阶段风险检测流水 & 在第三章中将 PyTOD 嵌入到融合检测模型，作为评分后端 \\
+    \\
+    算子层优化 & 支持 \textbf{provable quantization}、operator abstraction、部分 operator fusion 思路 & 不覆盖候选集组织、重排序与 ANN 检索路径管理 & 由本文融合层补充候选集输入组织与评分接口适配 \\
+    \\
+    大规模执行 & 支持 \textbf{automatic batching}，缓解显存不足问题；支持 \textbf{multi-GPU support} & 不解决 SSD-resident 索引、异步 I/O、检索--计算重叠 & 由 FlashANNS 提供 out-of-core 检索与 I/O--compute overlap \\
+    \\
+    系统角色 & 适合作为 \textbf{评分主干}，提供统一、可复用、可 GPU 化的异常评分框架 & 不是完整金融异常检测系统，不包含数据接入、召回、告警、复核闭环 & 本文在第三、四、五章中补足系统融合、数据路径优化和多 GPU 扩展 \\
+    \\
+    工程部署 & 基于 PyTorch，具备较好可扩展性，便于复用现有 GPU 张量基础设施 & 不直接提供面向金融风控在线系统的端到端部署结构 & 本文结合 RAPIDS、FAISS-GPU、FlashANNS 与调度层进行工程化整合 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{FlashANNS 与候选召回系统}
+
+在大规模异常检测系统中，若直接对全量样本执行精细异常评分，系统往往会因距离计算、候选组织和内存占用过大而难以满足吞吐要求。因此，引入高吞吐的候选召回模块，以先筛选潜在相关样本、再执行精细评分，是构建近实时系统的常见路线。FlashANNS 属于这一方向中的代表性工作，其核心关注点不是单纯``如何找近邻''，而是``在外存条件下如何让近邻搜索的 I/O 与计算协同推进，从而打破存储---计算瓶颈''\citep{xiao2025flashanns}。
+
+FlashANNS 针对 out-of-core ANN 场景提出了三项核心设计。第一项是 \textbf{dependency-relaxed asynchronous pipeline}，其基本思路是通过依赖放松打破传统图搜索中``先读后算''的严格串行步骤，使 SSD 访问和 GPU 计算能够在更大程度上重叠执行。第二项是 \textbf{warp-level concurrent SSD access}，其目标是在更细粒度上发起并处理 SSD 请求，降低单个慢请求对整个执行批次的阻塞影响。第三项是 \textbf{computation-I/O balanced graph degree selection}，即根据硬件配置中 I/O 带宽与 GPU 计算能力的相对关系，对图索引参数进行平衡配置，使检索系统更好地匹配具体硬件环境\citep{xiao2025flashanns}。FlashANNS 在高召回条件下对吞吐的显著提升表明，大规模候选召回系统的关键瓶颈确实不只在算法，而在存储访问、执行粒度和计算---I/O 协同。
+
+对于本文的 PyTOD--FlashANNS 融合系统而言，FlashANNS 的地位应被明确限定为\textbf{候选召回前端}。它并不替代异常评分，也不直接输出异常分数，而是在大规模数据中快速为后续评分阶段生成规模可控、质量可接受的候选集合。实际上，PyTOD 与 FlashANNS 处在同一执行链路的前后两个阶段：前者负责在候选集合上进行高效异常评分，后者负责在大规模样本中进行高吞吐候选缩减。也正因为这种关系，FlashANNS 在本文中的意义不只是``一个更快的 ANN 库''，而是使整个异常检测系统摆脱全量评分成本的重要前提。
+
+更进一步地，FlashANNS 的设计与本文后续提出的 GPU 主导执行链路并不冲突，而是互补的。FlashANNS 的异步 I/O---计算流水线解决的是\textbf{候选召回内部的 I/O 与检索计算重叠问题}；本文第四章所提出的单卡 GPU 主导执行链路解决的则是\textbf{候选召回与异常评分之间的中间结果搬运和阶段同步问题}。前者使候选召回本身具有更高吞吐，后者使``候选召回---异常评分''能够形成低开销连续链路。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 2-4 FlashANNS 异步 I/O---计算流水线原理图。} 展示传统串行图搜索与依赖放松异步流水线的差别，用于说明 FlashANNS 的关键不在 ANN 算法本身，而在执行链路组织方式。
+  \item \textbf{图 2-5 FlashANNS 在本文系统中的位置图。} 展示``输入向量 $\rightarrow$ 候选召回（FlashANNS）$\rightarrow$ 异常评分（PyTOD）$\rightarrow$ 结果输出''的关系，用于强调其前置候选召回角色。
+  \item \textbf{表 2-3 候选召回系统比较表。} 表中列出传统 ANN 组件、out-of-core ANN 系统与 FlashANNS 的主要特征，包括存储假设、是否考虑 I/O---计算重叠、是否适合大规模外存与主要特点等。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2-4.png}
+  \caption{FlashANNS 异步 I/O---计算流水线原理}
+  \label{fig:flashanns-io-pipeline}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~2-5}
+  \caption{FlashANNS 在本文系统中的位置}
+  \label{fig:flashanns-position}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{候选召回系统比较}
+  \label{tab:recall-systems}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabularx}{\linewidth}{@{}p{2.1cm}p{2.6cm}>
+    {\raggedright\arraybackslash}X p{2.6cm}p{2.4cm}>
+    {\raggedright\arraybackslash}X@{}}
+    \toprule
+    \textbf{类别} & \textbf{代表方案} & \textbf{主要存储假设} & \textbf{是否考虑 I/O--计算重叠} & \textbf{是否适合大规模外存} & \textbf{主要特点} \\
+    \midrule
+    传统 ANN 组件 & FAISS、HNSW、IVF/IVF-PQ 等 & 以\textbf{内存内索引}为主，通常假设索引或主要检索结构可驻留内存/显存 & 通常\textbf{不重点考虑} & 一般较弱 & 检索延迟低、工程成熟、适合中等规模向量召回；但面对超大规模数据时，易受内存/显存容量约束 \\
+    \\
+    out-of-core ANN 系统 & SPANN、DiskANN、FusionANNS 等 & 面向\textbf{SSD/外存驻留索引}，通过磁盘存储支撑更大规模数据 & 部分考虑，但多未充分实现端到端重叠 & 较强 & 能突破内存容量限制，支持亿级甚至更大规模检索；但仍可能存在粗粒度候选过多、CPU 供数瓶颈、I/O 串行化等问题 \\
+    \\
+    FlashANNS & FlashANNS & 明确面向\textbf{GPU + SSD} 的 out-of-core 图索引检索 & \textbf{是} & \textbf{强} & 通过 \textbf{dependency-relaxed asynchronous pipeline}、\textbf{warp-level concurrent SSD access} 与 \textbf{computation--I/O balanced graph degree selection} 实现 I/O--计算重叠，强调高吞吐候选召回 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{RAPIDS、FAISS-GPU 与工程可部署性}
+
+如果仅从算法流程出发，PyTOD--FlashANNS 融合系统似乎已经能够完成``候选召回---异常评分''两阶段任务；但从工程实现角度看，系统中仍包含大量与算法无关但对性能影响极大的环节，例如金融表格数据预处理、特征整理、批量统计、中间结果表达、向量检索接口管理以及 GPU 内存资源组织等。为此，本文引入 RAPIDS 与 FAISS-GPU 作为系统后端增强组件，以降低这些环节的实现复杂度，并尽可能让关键数据路径保持在 GPU 侧\citep{rapids_cudf_pandas,faiss_gpu_wiki}。
+
+RAPIDS 的核心价值在于为 GPU 上的表格处理和数据科学工作流提供统一支持。cuDF 作为 RAPIDS 的重要组成部分，可视为面向 GPU 的 DataFrame 引擎，适合处理金融系统中大量以表格形式存在的交易记录、账户属性、设备特征和时间统计结果。对于本文而言，RAPIDS 的主要作用不在于替代 PyTOD，而在于承担\textbf{候选召回前后的数据组织工作}：包括字段清洗、特征拼接、归一化、窗口统计、中间结果重排和批量结果合并等。这些操作如果长期停留在 CPU 侧，不仅会使 GPU 候选召回和评分链路被前置预处理所抵消，还会不断引入 CPU$\leftrightarrow$GPU 数据往返。RAPIDS 的引入使这些表格型处理能够迁移至 GPU，从而为构建 GPU 主导执行链路创造条件。
+
+需要强调的是，RAPIDS 在使用方式上也存在性能边界。官方文档说明，\texttt{cudf.pandas} 的 fast--slow proxy 机制会优先尝试在 GPU 上执行 pandas 操作，若失败则回退到 CPU 侧的 pandas，并在需要时自动同步数据\citep{rapids_cudf_pandas}。因此，对于本文系统而言，RAPIDS 的高价值使用方式不是在性能关键路径上依赖透明回退，而是优先采用原生 cuDF、CuPy 或 pylibcudf 路径，使关键中间结果尽量保持 device-resident，避免隐式 fallback 把 CPU 重新拉回关键路径。与此同时，RMM 文档表明，页锁定主机内存资源可通过 \texttt{PinnedHostMemoryResource} 提供，并能显著加快主机与设备之间的数据传输\citep{rapids_rmm_pinned}，这为本文后续在必要边界上采用 pinned memory 提供了工程依据。
+
+FAISS-GPU 则主要承担向量检索后端的工程增强角色。FAISS 官方文档指出，GPU 索引可以直接接收 host 或 device 指针作为 \texttt{add()} 和 \texttt{search()} 输入；如果输入已经位于与索引相同的 GPU 上，则不会发生拷贝，执行速度最快，否则会发生 CPU$\rightarrow$GPU 或跨设备拷贝，并在结果返回时再执行相应拷贝\citep{faiss_gpu_wiki}。此外，FAISS 的 \texttt{StandardGpuResources} 会预先分配 scratch memory，并利用 CUDA stream 组织 GPU 工作，从而减少 \texttt{cudaMalloc/cudaFree} 带来的同步与抖动\citep{faiss_gpu_wiki}。
+
+从角色分工上看，RAPIDS 与 FAISS-GPU 对本文系统分别作用于``数据处理路径''和``向量检索路径''。前者让金融表格型数据及候选结果组织尽量留在 GPU；后者则为设备侧向量检索提供高性能实现和成熟资源管理。二者共同服务于同一个目标，即压缩 CPU 与 GPU 之间的非必要往返，使 PyTOD--FlashANNS 融合系统不止在候选召回和异常评分单点上更快，而是在整条执行链路上更低开销、更可部署。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 2-6 RAPIDS 在本文系统中的数据处理位置图。} 展示原始金融数据、特征处理、中间结果组织与候选召回/评分之间的关系，用于说明 RAPIDS 不承担检测任务，而是承担数据路径增强任务。
+  \item \textbf{图 2-7 FAISS-GPU 的 CPU/GPU 互操作路径图。} 展示 host pointer 输入、device pointer 输入、同 GPU 无拷贝、跨设备拷贝和结果返回路径，用于为第四章单卡数据路径优化提供背景。
+  \item \textbf{表 2-4 RAPIDS 与 FAISS-GPU 的功能分工表。} 表中列出组件、主要功能、在本文系统中的位置、带来的主要收益以及潜在限制，用于突出二者的互补关系。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~2-6}
+  \caption{RAPIDS 在本文系统中的数据处理位置}
+  \label{fig:rapids-position}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig2_6_2_7_rapids_faiss_paths-Page-1.drawio.png}
+  \caption{FAISS-GPU 的 CPU/GPU 互操作路径}
+  \label{fig:faiss-interop}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{RAPIDS 与 FAISS-GPU 的功能分工}
+  \label{tab:rapids-faiss-roles}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~2-4}
+\end{table}
+
+\section{多 GPU 调度与在线推理启示}
+
+在单卡系统吞吐率接近上限或显存无法容纳更大索引时，多 GPU 扩展成为提升系统能力的自然方向。然而，多 GPU 并不意味着性能一定线性增加，其根本原因在于更多 GPU 既带来了更多计算资源，也带来了更复杂的查询分发、索引组织、设备间通信、结果归并和共享 I/O 竞争问题。对于本文系统而言，研究多 GPU 调度与在线推理启示的目的，是回答这样一个问题：\textbf{在 PyTOD--FlashANNS 融合链路中，如何利用多 GPU 提升吞吐而不让 CPU 重新成为瓶颈。}
+
+cuVS 多 GPU 最近邻文档将多 GPU ANN 组织方式区分为 \textbf{replicated mode} 与 \textbf{sharded mode} 两类：replicated 模式下，每张 GPU 存储完整索引，通过将查询分发到不同 GPU 提升吞吐；sharded 模式下，索引被划分到多个 GPU，以支持更大的数据规模\citep{cuvs_multi_gpu_nn}。文档进一步指出，replicated 模式适合吞吐优先场景，而 sharded 模式适合容量优先场景，并提供了不同的负载均衡与归并策略\citep{cuvs_multi_gpu_nn}。这与本文在第五章中采用``数据并行 + 索引复制''为主、多 GPU GPU 侧归并为兜底的设计思路一致。
+
+与此同时，cuVS 文档也揭示了一个容易被忽略的现实约束：当前多 GPU IVF-PQ 和 IVF-Flat 接口要求数据集、查询与输出数组位于 host memory\citep{cuvs_multi_gpu_ivf_host}。这意味着，如果系统直接采用现成多 GPU host 接口而不进一步做系统级优化，则 CPU 和主机内存会重新进入关键路径，中间结果聚合和数据往返成本也会被重新放大。因此，从本文系统的角度看，replicated 与 sharded 的区别不仅在于``索引是否复制''，更在于``CPU 是否会重新成为多 GPU 搜索链路中的中心节点''。
+
+当业务约束或索引容量导致必须进行跨卡归并时，设备间通信与归并组织方式便成为新问题。NCCL 官方文档指出，其集体通信操作是异步入队到指定 CUDA stream 上执行的，可以与计算过程通过标准 CUDA 同步机制配合；但文档同时警告，在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream 会形成所有 stream 之间的全局同步点\citep{nccl_stream_semantics}。这说明 GPU 侧归并虽优于 CPU 聚合，但如果通信流和计算流组织不当，也可能引入新的同步开销。
+
+除通信外，存储路径拓扑也是多 GPU 场景中不可忽略的问题。GPUDirect Storage（GDS）文档指出，GDS 能够在 GPU 内存与存储之间建立直接 DMA 路径，从而避免 CPU bounce buffer，降低 CPU 负载、降低延迟并提高带宽\citep{gds_overview}。设计指南进一步指出，如果 GPU、NIC 和存储设备位于相同 PCIe 交换机下，直接数据路径通常具有更高带宽；反之，若数据绕经 CPU 路径，则系统带宽与延迟会明显受限\citep{gds_design_guide}。这意味着，多 GPU 扩展不能只看 GPU 之间的负载均衡，还必须考虑 GPU---SSD---PCIe---NUMA 的拓扑关系，并通过 I/O lane 绑定和准入控制避免共享存储路径成为新的吞吐上限。
+
+综合而言，现有多 GPU 调度与在线推理研究为本文提供了三个关键启示：其一，在吞吐优先的金融异常检测场景下，应优先采用 replicated 架构，让每张 GPU 独立完成候选召回与异常评分；其二，当必须跨卡归并时，应将归并逻辑尽量下沉到 GPU 并利用 NCCL 通信，而不是回到 CPU 聚合；其三，多 GPU 扩展的上限不仅受设备数目影响，也受制于存储路径、PCIe/NUMA 拓扑和 I/O 资源组织方式。因此，本文后续的多 GPU 设计不是单纯的``加更多 GPU''，而是围绕``CPU 控制面 + GPU 数据平面 + 拓扑感知 I/O 控制''构建完整扩展路径。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 2-8 replicated 与 sharded 两类多 GPU 扩展模式对比图。} 展示复制式多实例与分片式索引的基本结构、查询路径和归并路径，用于帮助读者理解第五章方案选择。
+  \item \textbf{图 2-9 CPU 聚合路径与 GPU 侧归并路径对比图。} 展示当发生跨卡归并时，两种路径的中间结果流向和同步位置，用于说明为什么本文强调 CPU 退出数据平面。
+  \item \textbf{表 2-5 多 GPU 扩展策略比较表。} 表中列出 replicated、sharded、CPU 聚合、GPU 侧归并、拓扑感知 I/O 控制等策略的特点、适用场景和与本文系统的关系。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~2-8}
+  \caption{replicated 与 sharded 两类多 GPU 扩展模式对比}
+  \label{fig:rep-vs-shard}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~2-9}
+  \caption{CPU 聚合路径与 GPU 侧归并路径对比}
+  \label{fig:cpu-vs-gpu-merge}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{多 GPU 扩展策略比较}
+  \label{tab:multi-gpu-strategies}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~2-5}
+\end{table}
+
+\section{本章小结}
+
+本章围绕本文研究对象所涉及的关键技术与相关研究进行了系统梳理。首先，从异常检测方法角度看，距离型、密度型和统计型方法为金融异常检测提供了理论基础，但在大规模场景下普遍面临复杂度与可扩展性问题\citep{aggarwal2017outlier,zhao2022tod}。其次，从 GPU 异常检测系统角度看，TOD/PyTOD 通过张量算子抽象、自动批处理和多 GPU 支持证明了异常评分可以被统一映射到 GPU 执行框架中，为本文选取 PyTOD 作为评分主干提供了依据\citep{zhao2022tod}。再次，从候选召回系统角度看，FlashANNS 通过异步 I/O---计算流水线、warp 级并发访问与 I/O---计算平衡设计，表明大规模 ANN 检索的关键问题在于存储与计算协同\citep{xiao2025flashanns}。同时，RAPIDS 与 FAISS-GPU 分别为 GPU 表格数据处理和 GPU 向量检索提供了成熟后端能力，使构建统一 GPU 数据路径成为可能\citep{rapids_cudf_pandas,faiss_gpu_wiki}。最后，多 GPU 推理与通信研究进一步说明，replicated 与 sharded 的选择、GPU 侧归并、NCCL 通信以及拓扑感知 I/O 控制共同决定了多设备场景下的系统扩展能力\citep{cuvs_multi_gpu_nn,nccl_stream_semantics,gds_overview}。
+
+通过这些相关工作可以看出，当前研究已经分别在异常评分、候选召回和多 GPU 扩展等方面提供了基础，但尚缺少一个面向金融大规模异常检测任务、能够同时统筹候选召回、异常评分、数据路径优化与多 GPU 扩展的统一系统框架。本文正是在这一空白处切入：以 PyTOD 为异常评分主干，以 FlashANNS 为候选召回模块，并结合 RAPIDS、FAISS-GPU、GPU 常驻执行链路以及多 GPU 数据并行与 GPU 侧归并机制，构建一套可部署、可扩展、可验证的金融异常检测系统。第三章将在此基础上进一步给出 PyTOD--FlashANNS 融合模型、实验数据准备与基础执行流程设计。
+
+
+

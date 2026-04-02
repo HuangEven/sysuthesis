@@ -1,0 +1,45 @@
+% !TEX root = ../main.tex
+
+\chapter{实验脚本与日志模板}
+
+本附录在正式版中应补充关键脚本入口、命令行参数模板、日志字段样例与目录组织方式，以支撑“统一脚本、统一日志、统一口径”的研究方法。相关脚本与复核记录可与内部材料统一维护和版本化管理\citep{internal2026record}。
+
+\section{建议补充内容}
+
+\begin{itemize}
+  \item 关键训练、建索引、查询与评测脚本入口。
+  \item 常用命令行参数模板与默认值说明。
+  \item 日志字段示例及字段解释。
+  \item 工程目录组织方式与结果归档规范。
+\end{itemize}
+
+
+\chapter{图表补充说明}
+
+本附录应集中说明正文各图表的变量命名、单位、比较口径与补图要求，确保图表在送审版和答辩版中保持一致。
+
+\section{建议补充内容}
+
+\begin{itemize}
+  \item 图表中的变量名称、量纲和取值范围。
+  \item 不同图表之间共享指标的统一定义。
+  \item 同口径比较、跨阶段比较与跨后端比较的边界说明。
+  \item 送审版与答辩版图表的共用与差异化补充规则。
+\end{itemize}
+
+\chapter{缩写、变量与配置对照}
+
+本附录列出正文中频繁出现的关键变量、配置项及其含义，便于后续统一实验脚本和结果复核。
+
+\renewcommand{\arraystretch}{1.2}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.34\textwidth}>{\raggedright\arraybackslash}X}
+\textbf{变量或配置项} & \textbf{含义} \\
+\texttt{batch\_size} & 单次提交到候选召回或精排路径中的批处理大小。 \\
+\texttt{rerank\_budget} & 进入高精度精排阶段的候选数量预算。 \\
+\texttt{nlist} & 索引聚类桶数量或粗排分区规模参数。 \\
+\texttt{nprobe} & 查询阶段实际访问的粗排桶数量。 \\
+\texttt{device\_id} & 当前任务绑定的 GPU 设备标识。 \\
+\texttt{replica\_mode} & 多 GPU 复制式多实例执行模式开关。 \\
+\texttt{bounded\_batch\_size} & 在时延约束下允许形成的微批上限。 \\
+\end{tabularx}

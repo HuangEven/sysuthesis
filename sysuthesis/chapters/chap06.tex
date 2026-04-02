@@ -1,0 +1,461 @@
+% !TEX root = ../main.tex
+
+\chapter{综合实验设计、结果分析与讨论}
+
+\section{实验环境与软硬件配置}
+
+为了系统验证本文所提出的 PyTOD--FlashANNS 融合异常检测系统在不同数据规模、不同执行链路和不同 GPU 数量下的有效性与可扩展性，本章从实验环境、数据集设置、评价指标、比较方案和结果分析五个方面展开综合实验。与前三章和第五章中的局部验证不同，本章的目标是站在全文层面，统一回答以下问题：第一，融合架构是否在真实或半真实金融数据上具有实际可用性；第二，单卡场景下 GPU 主导端到端执行链路是否真正降低了 CPU$\leftrightarrow$GPU 往返与 I/O 等待；第三，多 GPU 场景下数据并行与索引复制方案能否稳定提升吞吐率，并避免 CPU 重新成为聚合瓶颈；第四，拓扑感知 I/O lane 控制和 GPU 侧归并等增强机制在何种条件下有效\citep{xiao2025flashanns,zhao2022tod}。
+
+实验硬件平台由多张同型号 GPU、主机 CPU、内存、SSD 以及对应 PCIe 拓扑组成。单卡实验主要使用 1 张 GPU 运行完整的候选召回与异常评分链路，用于验证第四章所提出的数据路径优化、异步流组织、RAPIDS 后端重构和 FAISS-GPU 检索增强的效果。多卡实验则使用 2 张及以上 GPU，主要验证第五章提出的数据并行与索引复制方案、控制面调度机制、GPU 侧归并和 I/O lane 控制机制。硬件平台中需明确给出 GPU 型号、显存容量、CPU 型号、主机内存容量、SSD 型号及容量、PCIe 代际和 NUMA 拓扑关系，以保证实验结果的可复现性和后续讨论的可解释性。对于涉及 GDS 或拓扑感知 I/O 的实验，还需额外说明操作系统、驱动版本、CUDA 版本以及存储路径配置\citep{gds_overview,gds_design_guide}。
+
+软件环境方面，本文系统由 PyTOD/TOD 评分实现、FlashANNS 候选召回模块、RAPIDS 数据处理组件、FAISS-GPU 检索后端增强组件以及多 GPU 通信和调度运行时共同组成。为了确保实验可复现，需明确列出 Python 版本、PyTorch 版本、PyTOD 版本、RAPIDS 版本、FAISS-GPU 版本、CUDA 版本、NCCL 版本以及操作系统环境。由于不同版本的 RAPIDS、FAISS-GPU 和 cuVS 在接口与性能行为上可能存在差异，本节采用固定的软件组合环境快照进行实验，并在附录或复核记录中提供环境导出信息。对于多 GPU 部分，还需说明是否采用多进程独占 GPU 方式、是否启用 NCCL 后端、是否启用 GDS，以及对应的队列深度和运行时配置项\citep{cuvs_multi_gpu_nn,nccl_stream_semantics,gds_overview}。
+
+在实现配置上，本文将实验分为三类：\textbf{方法有效性验证实验}（1M 规模真实/半真实数据）、\textbf{单卡系统性能实验}（端到端吞吐、延迟与资源利用）、以及\textbf{多 GPU 扩展实验}（replicated 扩展性、控制面开销、GPU 侧归并与 I/O lane 控制）。三类实验共享一套基础代码框架，但在数据规模、硬件使用方式和评价指标侧重点上存在差异。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{表 6-1 实验硬件平台配置表。} 包括 GPU 型号与数量、显存容量、CPU 型号、内存容量、SSD 型号与数量、PCIe 版本、NUMA 拓扑等。
+  \item \textbf{表 6-2 实验软件环境配置表。} 包括 Python、PyTorch、PyTOD、RAPIDS、FAISS-GPU、CUDA、NCCL、操作系统和驱动版本。
+  \item \textbf{图 6-1 实验平台拓扑示意图。} 展示 CPU、GPU、SSD、PCIe/NUMA 的连接关系，用于解释后续 I/O lane 相关实验。
+\end{itemize}
+
+\begin{table}[htbp]
+  \caption{实验硬件平台配置}
+  \label{tab:hw-config}
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{2.3cm}p{5.8cm}p{6.2cm}}
+    \hline
+    项目 & 规格 & 说明 \\
+    \hline
+    CPU 平台 & 2 $\times$ Intel Xeon Gold 6348 @ 2.60GHz & 56 核 112 线程，双 NUMA \\
+    主存容量 & 503\,GiB & 系统总内存 \\
+    GPU 平台 & 8 $\times$ NVIDIA GeForce RTX 3090 & 24\,GB/卡，总显存 192\,GB \\
+    PCIe 能力 & PCIe Gen4 $\times$16 & 8 张 GPU 均为 Gen4 $\times$16 \\
+    本地存储 & 3 $\times$ NVMe SSD & 894.3\,GB $\times$ 2，3.5\,TB $\times$ 1，总约 5.29\,TB \\
+    NUMA 拓扑 & 2 个 NUMA 节点 & NUMA 0 对应 GPU0--GPU3，NUMA 1 对应 GPU4--GPU7 \\
+    GPU 互连特征 & 同侧 PIX/PXB，跨侧 SYS & 用于解释双卡与 I/O lane 实验 \\
+    网络接口 & 2 $\times$ Mellanox NIC & mlx5\_0，mlx5\_1 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \caption{实验软件环境配置}
+  \label{tab:sw-config}
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{2.6cm}p{6.2cm}p{5.5cm}}
+    \hline
+    项目 & 版本/配置 & 说明 \\
+    \hline
+    操作系统 & Ubuntu 20.04.4 LTS，Linux 5.13.0-30-generic & 实验运行环境 \\
+    Python / CUDA & Python 3.11.14；CUDA Runtime 12.4 & 基础运行时环境 \\
+    深度学习框架 & PyTorch 2.5.0+cu124；NCCL 2.21.5 & GPU 张量计算与通信环境 \\
+    驱动环境 & NVIDIA Driver 550.120 & 与 CUDA 12.4 对应 \\
+    异常检测框架 & PyTOD（\href{https://github.com/yzhao062/pytod}{yzhao062/pytod}） & 以 GitHub 主仓库为版本口径更稳妥 \\
+    ANN 检索组件 & FlashANNS / ann\_search（\href{https://github.com/Tinkerver/ann_search}{Tinkerver/ann\_search}） & Preview Release；默认分支 main；无正式 release \\
+    其他核心库 & FAISS 1.13.2；PyOD 2.0.6；NumPy 2.2.6；SciPy 1.13.1；scikit-learn 1.6.1 & 实验所用主要 Python 依赖 \\
+    RAPIDS 相关 & cuDF / cuML / RMM 未安装 & 非本轮统一复现实验默认依赖 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  % 图 6-1：黑白学术风格硬件拓扑示意图（Host—双 CPU/NUMA—GPU—NVMe）
+  \resizebox{0.95\linewidth}{!}{%
+  \begin{tikzpicture}[
+    font=\small,
+    >=Latex,
+    box/.style={draw, line width=0.5pt, rounded corners=1pt, align=center, inner xsep=6pt, inner ysep=5pt},
+    titlebox/.style={box, minimum width=9.5cm},
+    cpbox/.style={box, minimum width=6.2cm, minimum height=2.2cm},
+    gpubox/.style={box, minimum width=1.55cm, minimum height=1.25cm, inner xsep=3pt, inner ysep=3pt},
+    ssdbox/.style={box, minimum width=13.2cm, minimum height=1.4cm},
+    link/.style={draw, line width=0.5pt},
+    alink/.style={link,-Latex},
+  ]
+    % 顶部 Host
+    \node[titlebox] (host) {Host\\Ubuntu 20.04 / Driver 550};
+
+    % 两个 CPU/NUMA 盒子
+    \node[cpbox, below left=14mm and 12mm of host] (cpu0) {CPU Socket 0 / NUMA 0\\Xeon Gold 6348\\Memory $\sim$257.6\,GB};
+    \node[cpbox, below right=14mm and 12mm of host] (cpu1) {CPU Socket 1 / NUMA 1\\Xeon Gold 6348\\Memory $\sim$258.0\,GB};
+
+    % Host 到 CPU 的连接
+    \draw[link] (host.south) -- ++(0,-6mm) -| (cpu0.north);
+    \draw[link] (host.south) -- ++(0,-6mm) -| (cpu1.north);
+
+    % CPU0 <-> CPU1 SYS/UPI
+    \draw[<->, link] (cpu0.east) -- node[above, font=\footnotesize] {SYS / UPI} (cpu1.west);
+
+    % GPU 行（左 4 右 4）
+    \node[gpubox, below=12mm of cpu0.south west, anchor=north west] (gpu0) {GPU0\\RTX 3090\\24\,GB};
+    \node[gpubox, right=4mm of gpu0] (gpu1) {GPU1\\RTX 3090\\24\,GB};
+    \node[gpubox, right=4mm of gpu1] (gpu2) {GPU2\\RTX 3090\\24\,GB};
+    \node[gpubox, right=4mm of gpu2] (gpu3) {GPU3\\RTX 3090\\24\,GB};
+
+    \node[gpubox, below=12mm of cpu1.south west, anchor=north west] (gpu4) {GPU4\\RTX 3090\\24\,GB};
+    \node[gpubox, right=4mm of gpu4] (gpu5) {GPU5\\RTX 3090\\24\,GB};
+    \node[gpubox, right=4mm of gpu5] (gpu6) {GPU6\\RTX 3090\\24\,GB};
+    \node[gpubox, right=4mm of gpu6] (gpu7) {GPU7\\RTX 3090\\24\,GB};
+
+    % CPU 到 GPU 的连接（标注 PCIe Gen4 Fabric）
+    \draw[alink] (cpu0.south) -- node[left, font=\footnotesize, align=center] {PCIe Gen4\\Fabric} ($(gpu0.north)!0.5!(gpu3.north)$);
+    \draw[alink] (cpu1.south) -- node[right, font=\footnotesize, align=center] {PCIe Gen4\\Fabric} ($(gpu4.north)!0.5!(gpu7.north)$);
+
+    % 底部共享 NVMe SSD Pool
+    \node[ssdbox, below=14mm of $(gpu0.south)!0.5!(gpu7.south)$] (ssd) {Local NVMe SSD Pool\\894.3\,GB + 894.3\,GB + 3.5\,TB};
+
+    % 从两侧 GPU 区域指向共享 SSD（示意共享存储池）
+    \draw[link] ($(gpu0.south)!0.5!(gpu3.south)$) -- ($(gpu0.south)!0.5!(gpu3.south)$ |- ssd.north) -- (ssd.north);
+    \draw[link] ($(gpu4.south)!0.5!(gpu7.south)$) -- ($(gpu4.south)!0.5!(gpu7.south)$ |- ssd.north) -- (ssd.north);
+  \end{tikzpicture}%
+  }
+  \caption{实验平台拓扑示意图}
+  \label{fig:exp-topology}
+\end{figure}
+
+\section{数据集与任务设置}
+
+本章实验采用``真实/半真实数据集用于方法有效性验证，合成扩展数据集用于系统性能与扩展性验证''的总体策略\citep{ibm_aml_data,ibm_amlsim,ieee_cis_fraud}。公开可获得的真实金融数据通常规模有限，但具有更真实的字段分布、业务噪声和标签结构；而系统吞吐、多 GPU 扩展和高并发 I/O 实验则需要更大规模、分布可控、可重复构造的数据集，因此采用高保真合成数据作为大规模实验基座。
+
+在 1M 规模有效性验证中，本文选取三类代表性数据集：\textbf{IEEE-CIS Fraud Detection}（结构化支付风控数据）\citep{ieee_cis_fraud}、\textbf{Credit Card Fraud Detection}（经典信用卡欺诈基准）\citep{dalpozzolo2015creditcard}，以及 \textbf{DGraphFin}（金融图数据集）\citep{dgraphfin_paper,dgraphfin_baseline}。为保证一致性，方法有效性实验控制输入规模在约 1M 左右。
+
+在 10M 与 100M 规模的性能实验中，本文采用基于 \textbf{IBM AML / AMLSim} 构建的高保真合成金融交易数据\citep{ibm_aml_data,ibm_amlsim}。其中，10M 数据集主要用于单卡系统优化的综合性能评估，100M 数据集用于多 GPU 扩展实验及 I/O 路径压力测试。
+
+从任务组织上看，本文实验被划分为四类：\textbf{候选召回与异常评分有效性任务}、\textbf{单卡性能任务}、\textbf{多 GPU replicated 扩展任务}以及\textbf{跨卡归并与 I/O 路径任务}。各任务使用相同的核心代码框架，但数据规模、运行方式和指标重点不同。
+
+在数据划分方面，有效性验证任务按训练集、验证集和测试集划分；性能与扩展实验采用固定索引集与固定查询集方式，将查询批量持续注入系统，以更准确地衡量吞吐率、延迟与资源利用率。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{表 6-3 数据集与实验任务映射表。} 列出各数据集的来源、规模、特征维度、标签形式以及在本文中的用途。
+  \item \textbf{图 6-2 数据规模层级与实验类型关系图。} 展示 1M、10M、100M 三个层级分别对应的方法有效性、单卡性能和多 GPU 扩展实验。
+  \item \textbf{表 6-4 训练集、验证集和测试集划分说明表。} 说明有效性实验与性能实验在数据使用方式上的差异。
+\end{itemize}
+
+\begin{table}[htbp]
+  \caption{数据集与实验任务映射}
+  \label{tab:dataset-task-map}
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{3.1cm}p{3.3cm}p{1.3cm}p{2.4cm}p{5.3cm}}
+    \hline
+    数据集 & 来源类型 & 规模层级 & 标签形式 & 本文用途 \\
+    \hline
+    IEEE-CIS Fraud Detection & 真实/半真实公开金融表格数据 & 真实集 & 二分类标签 & 方法有效性主验证；单卡、双卡真实数据口径基准 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 1M & 异常交易标签 & 统一小规模桥接实验；连接真实集与扩展实验 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 10M & 异常交易标签 & 单卡与双卡性能对比的共同起点 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 50M & 异常交易标签 & 单卡中大规模性能验证；双卡扩展对比 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 100M & 异常交易标签 & 双卡扩展与压力测试 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+    font=\small,
+    >=Latex,
+    main/.style={draw, rounded corners=1pt, line width=0.4pt, align=center, inner sep=4pt, minimum width=1.8cm},
+    child/.style={draw, line width=0.4pt, align=left, inner sep=3pt, text width=5.2cm},
+    link/.style={-Latex, line width=0.4pt}
+  ]
+    % 主层级（自上而下）
+    \node[main] (real) {真实集};
+    \node[main, below=5mm of real] (m1) {1M};
+    \node[main, below=20mm of m1] (m10) {10M};
+    \node[main, below=12mm of m10] (m50) {50M};
+    \node[main, below=10mm of m50] (m100) {100M};
+
+    % 真实集 -> 1 子项
+    \node[child, right=12mm of real] (real_a) {真实场景有效性验证};
+    \draw[link] (real.east) -- (real_a.west);
+
+    % 1M -> 3 子项
+    \node[child, right=12mm of m1, yshift=1mm] (m1_a) {方法有效性桥接实验};
+    \node[child, below=2mm of m1_a] (m1_b) {单卡性能起点实验};
+    \node[child, below=2mm of m1_b] (m1_c) {双卡性能起点实验};
+    \draw[link] (m1.east) -- (m1_a.west);
+    \draw[link] (m1.east) -- (m1_b.west);
+    \draw[link] (m1.east) -- (m1_c.west);
+
+    % 10M -> 2 子项
+    \node[child, right=12mm of m10, yshift=2.5mm] (m10_a) {单卡系统性能实验};
+    \node[child, below=2mm of m10_a] (m10_b) {双卡 replicated 扩展实验};
+    \draw[link] (m10.east) -- (m10_a.west);
+    \draw[link] (m10.east) -- (m10_b.west);
+
+    % 50M -> 2 子项
+    \node[child, right=12mm of m50, yshift=2.5mm] (m50_a) {单卡中大规模性能实验};
+    \node[child, below=2mm of m50_a] (m50_b) {双卡中大规模扩展实验};
+    \draw[link] (m50.east) -- (m50_a.west);
+    \draw[link] (m50.east) -- (m50_b.west);
+
+    % 100M -> 1 子项
+    \node[child, right=12mm of m100] (m100_a) {双卡扩展与压力测试实验};
+    \draw[link] (m100.east) -- (m100_a.west);
+  \end{tikzpicture}
+  \caption{数据规模层级与实验类型关系图}
+  \label{fig:scale-vs-exp}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{训练集、验证集和测试集划分说明}
+  \label{tab:data-split}
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{2.3cm}p{2.2cm}p{3.3cm}p{2.9cm}p{3.4cm}p{2.6cm}}
+    \hline
+    实验类型 & 数据规模 & 数据使用方式 & 划分方式 & 主要用途 & 说明 \\
+    \hline
+    方法有效性验证 & 真实集 & 训练集 / 验证集 / 测试集 & 固定随机种子划分 & 评估 PR-AUC、Recall@k & 用于真实/半真实数据上的检测效果验证 \\
+    方法有效性桥接实验 & 1M & 训练集 / 验证集 / 测试集 & 与真实集一致的固定划分方式 & 评估 PR-AUC、Recall@k、Top-$k$ overlap & 连接真实集实验与合成扩展实验 \\
+    单卡性能实验 & 10M、50M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、GPU Utilization & 强调端到端吞吐与稳定性 \\
+    双卡扩展实验 & 10M、50M、100M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、CPU/GPU Utilization & 强调扩展收益与控制面负担 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+
+\section{评价指标与比较原则}
+
+为全面评价本文系统的有效性与工程价值，本章采用多维度指标体系，包括异常检测效果指标、候选检索质量指标、系统吞吐与延迟指标以及资源利用率指标\citep{aggarwal2017outlier,cuvs_multi_gpu_nn}。
+
+异常检测效果方面，采用 ROC-AUC、PR-AUC 与 Recall@k；候选检索质量方面，采用 Recall@k / Top-$k$ overlap；系统性能方面，采用 QPS、平均延迟与 p95/p99 延迟；资源利用率方面，采用 GPU 利用率、CPU 占用率、显存使用率、I/O 带宽利用率以及 CPU$\leftrightarrow$GPU 传输开销占比。
+
+比较原则方面，本文坚持三项要求：尽量共享相同数据集、相同向量表示和相同硬件配置；比较不同召回配置时控制候选集合规模或召回质量处于同一数量级；多 GPU 实验中采用相同软件环境与相近查询到达方式，确保差异主要来自扩展策略本身。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{表 6-5 实验评价指标定义表。}
+  \item \textbf{图 6-3 指标体系结构图。}
+  \item \textbf{表 6-6 比较原则与实验控制变量表。}
+\end{itemize}
+
+\begin{table}[htbp]
+  \caption{实验评价指标定义}
+  \label{tab:metrics}
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{2.0cm}p{2.7cm}p{4.0cm}p{3.3cm}p{5.0cm}}
+    \hline
+    指标类别 & 指标名称 & 定义 & 适用实验 & 说明 \\
+    \hline
+    异常检测效果 & PR-AUC & Precision--Recall 曲线下面积 & 真实集、1M & 金融异常检测样本极不平衡，PR-AUC 比 ROC-AUC 更敏感 \\
+    异常检测效果 & Recall@$k$ & 前 $k$ 个高风险样本中的真实异常覆盖率 & 真实集、1M & 对应业务审查预算 \\
+    候选检索质量 & Top-$k$ overlap & 近似排序结果与基线排序结果前 $k$ 项重合度 & 1M、10M、50M、100M & 说明候选召回没有明显破坏最终排序 \\
+    系统性能 & QPS & 每秒处理查询数 & 全部规模 & 端到端吞吐核心指标 \\
+    系统性能 & p99 Latency & 99 分位端到端延迟 & 全部规模 & 反映尾延迟与系统稳定性 \\
+    资源利用率 & GPU Utilization & GPU 平均利用率 & 单卡、双卡 & 验证 GPU 主导链路是否真正持续工作 \\
+    资源利用率 & CPU Utilization & CPU 平均占用率 & 双卡重点、单卡辅助 & 验证 CPU 是否仍主要处于控制面 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  % 让图形“天然”不超出版心，避免 \resizebox 被迫缩小导致字太小
+  % 统一 boxleaf 上下留白：用 \strut 固定字高/字深，换行后也能保持上下边距更对称
+  \providecommand{\leaftext}[1]{\strut#1\strut}
+
+  \resizebox{\linewidth}{!}{%
+  \begin{tikzpicture}[
+    font=\footnotesize,
+    >=Latex,
+    grow=down,
+    parent anchor=south,
+    child anchor=north,
+    edge from parent/.style={draw,-Latex, line width=0.4pt, shorten >=2pt, shorten <=2pt},
+    % 折线连接：先下再横向对齐，保证连接线不被边框“吃掉”且更规整
+    edge from parent path={(\tikzparentnode.south) -- ++(0,-3pt) -| (\tikzchildnode.north)},
+    % 缩小横向展开宽度，避免整体过宽被缩放得过小
+    % level 1：控制 4 个 boxwide 之间的间距（让不同大类的叶子不要互相挤）
+    level 1/.style={sibling distance=48mm, level distance=18mm},
+    % level 2：控制同一 boxwide 下 boxleaf 的默认间距（同类更紧凑）
+    level 2/.style={sibling distance=28mm, level distance=18mm},
+    box/.style={draw, rounded corners=1pt, line width=0.4pt, align=center, inner xsep=4pt, inner ysep=4pt},
+    boxwide/.style={box, text width=3.3cm, minimum height=2.2em},
+    % boxleaf：上下 inner ysep 一致 + 文本块居中（配合 \leaftext 让自动换行也更均匀）
+    boxleaf/.style={box, text width=1.6cm, minimum height=2.2em, inner ysep=3pt, text centered}
+  ]
+    \node[boxwide] {实验评价指标体系}
+      child { node[boxwide] {一、异常检测效果} [sibling distance=16mm]
+        child { node[boxleaf] {\leaftext{PR-AUC}} }
+        child { node[boxleaf] {\leaftext{Recall@$k$}} }
+      }
+      child { node[boxwide] {二、候选排序一致性}
+        child { node[boxleaf] {\leaftext{Top-$k$\\overlap}} }
+      }
+      child { node[boxwide] {三、系统性能} [sibling distance=16mm]
+        child { node[boxleaf] {\leaftext{QPS}} }
+        child { node[boxleaf] {\leaftext{p99\\Latency}} }
+      }
+      child { node[boxwide] {四、资源利用率} [sibling distance=16mm]
+        child { node[boxleaf] {\leaftext{GPU\\Utilization}} }
+        child { node[boxleaf] {\leaftext{CPU\\Utilization}} }
+      };
+  \end{tikzpicture}%
+  }
+  \caption{指标体系结构图}
+  \label{fig:metric-taxonomy}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{比较原则与实验控制变量}
+  \label{tab:fairness-controls}
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{p{2.2cm}p{4.0cm}p{4.6cm}p{3.5cm}}
+    \hline
+    比较维度 & 比较原则 & 主要控制变量 & 说明 \\
+    \hline
+    数据一致性 & 相同实验类型共享相同数据源与标签口径 & dataset、label definition & 防止不同数据口径导致指标不可比 \\
+    划分一致性 & 有效性实验共享相同 train/val/test 划分 & split seed、train/val/test ratio & 保证 PR-AUC、Recall@k 可比 \\
+    查询负载一致性 & 性能实验共享相同索引集与查询集 & index set、query set、query count & 保证 QPS 与 p99 Latency 可比 \\
+    候选预算一致性 & 不同方法使用相同候选预算 & topk、rerank\_budget & 保证 Top-$k$ overlap 与性能比较公平 \\
+    批处理一致性 & 不同方案控制相同 batch 组织策略 & batch\_size、bounded\_batch\_size & 避免批大小掩盖系统差异 \\
+    硬件一致性 & 同类比较在相同 GPU/CPU/SSD 条件下进行 & gpu\_model、gpu\_count、cpu、ssd & 保证单卡与双卡实验口径清晰 \\
+    软件环境一致性 & 固定软件栈版本 & CUDA、PyTorch、FAISS-GPU、RAPIDS、NCCL & 保证复现实验结果 \\
+    单卡/双卡口径一致性 & 相同规模下分别比较单卡与双卡 & gpu\_count、replica\_mode & 避免不同架构混比 \\
+    统计一致性 & 统一重复轮次与汇总方式 & round、seed、mean & 每组 3 轮取均值 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\section{核心结果展示}
+
+本节从总体效果、单卡优化效果、多 GPU 扩展效果以及不同数据规模下的系统表现四个层面展示实验结果。
+
+\subsection{融合系统与基线系统的总体对比}
+
+在 1M 规模真实/半真实数据上，比较 PyTOD--FlashANNS 融合系统与若干基线系统：仅使用 PyTOD 全量评分、仅使用候选召回结果作为风险判断依据、以及未引入 GPU 常驻链路与后端重构的初始融合实现。结果需同时体现检测效果与系统性能，突出``候选召回压缩评分范围 + 候选集上张量化评分''在效果与效率间的平衡价值\citep{zhao2022tod,xiao2025flashanns}。
+
+\subsection{单卡优化前后的总体对比}
+
+对比第四章单卡优化前后的端到端表现：原始分段链路、仅启用候选召回加速、启用 GPU 常驻但未完成后端重构、以及完整单卡优化方案。重点体现 CPU$\leftrightarrow$GPU 往返次数与 I/O 等待对端到端收益的影响\citep{faiss_gpu_wiki,rapids_rmm_pinned,xiao2025flashanns}。
+
+\subsection{多 GPU 扩展结果对比}
+
+在 10M 与 50M 合成数据上，展示 replicated 主方案下 1/2/4 GPU 的吞吐扩展曲线、延迟分位数与 CPU 占用变化；并在必要时对比跨卡归并场景下 CPU 聚合与 GPU 侧归并的差异\citep{cuvs_multi_gpu_nn,nccl_stream_semantics}。
+
+\subsection{不同数据规模下的系统表现对比}
+
+比较 1M、10M、50M 三个规模层级下系统的瓶颈迁移与收益变化，统一呈现``方法有效性''与``系统可扩展性''两条主线。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{表 6-7 核心结果汇总表。}
+  \item \textbf{图 6-4 融合系统与基线系统总体对比图。}
+  \item \textbf{图 6-5 单卡优化前后对比图。}
+  \item \textbf{图 6-6 多 GPU 扩展曲线图。}
+  \item \textbf{图 6-7 不同规模下系统表现对比图。}
+\end{itemize}
+
+\begin{table}[htbp]
+  \caption{核心结果汇总}
+  \label{tab:core-summary}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~6-7}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~6-4}
+  \caption{融合系统与基线系统总体对比}
+  \label{fig:fusion-vs-baselines}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~6-5}
+  \caption{单卡优化前后对比}
+  \label{fig:single-gpu-before-after}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~6-6}
+  \caption{多 GPU 扩展曲线}
+  \label{fig:multi-gpu-scaling}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~6-7}
+  \caption{不同规模下系统表现对比}
+  \label{fig:scale-comparison}
+\end{figure}
+
+\section{结果讨论}
+
+结果讨论围绕四个问题展开：融合架构是否有效、数据路径优化是否真正改变瓶颈、多 GPU 主方案是否合理、以及存储拓扑与归并机制在何种条件下重要。
+
+第一，若融合系统在 1M 规模真实/半真实数据上维持合理的 ROC-AUC、PR-AUC、Recall@k 与 Top-$k$ 风险样本覆盖能力，则说明候选召回压缩评分范围并未破坏异常评分主干判别能力。
+
+第二，若单卡实验表明查询特征、候选结果与评分中间张量尽量保持在 GPU 侧后，CPU$\leftrightarrow$GPU 传输次数与体积明显下降，且 QPS 与延迟分位数同时改善，则说明 GPU 主导执行链路的核心结论成立：系统瓶颈主要来自阶段边界的数据搬运与同步，而非某一单点算子不够快\citep{faiss_gpu_wiki,rapids_rmm_pinned}。
+
+第三，若多 GPU replicated 架构表现出稳定吞吐增长且 CPU 占用未随之同幅增长，则说明控制面/数据平面分离的设计有效；若必须跨卡归并时 GPU 侧归并优于 CPU 聚合，则说明``CPU 退出数据平面''同样是多 GPU 扩展中的关键前提\citep{cuvs_multi_gpu_nn,nccl_stream_semantics}。
+
+第四，若扩展曲线在更高 GPU 数量下开始放缓，而 I/O lane 控制实验显示共享存储路径成为主要限制，则说明``多 GPU 上限最终受制于存储路径组织''的判断成立\citep{gds_overview,gds_design_guide}。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 6-8 结果讨论逻辑图。}
+  \item \textbf{表 6-8 关键发现与对应证据表。}
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~6-8}
+  \caption{结果讨论逻辑图}
+  \label{fig:discussion-logic}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{关键发现与对应证据}
+  \label{tab:findings-evidence}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~6-8}
+\end{table}
+
+\section{局限性分析}
+
+尽管本文在融合系统、单卡数据路径优化与多 GPU 扩展方面取得系统性结果，但仍存在局限性。
+
+首先，真实超大规模金融数据公开可得性有限，10M 与 100M 规模性能实验主要依赖 IBM AML / AMLSim 等合成数据\citep{ibm_aml_data,ibm_amlsim}。其次，replicated 架构受显存容量限制，索引规模进一步增大时必须转向 sharded 路径并承担更高通信与归并复杂度。第三，out-of-core 路径与拓扑感知 I/O 优化对部署条件依赖较强，其收益与 GPU--SSD--PCIe--NUMA 拓扑、驱动与 GDS 支持高度相关\citep{gds_overview,gds_design_guide}。第四，本文尚未延伸到多机分布式环境。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{表 6-9 研究局限性与影响范围表。}
+  \item \textbf{图 6-9 本文结论适用边界示意图。}
+\end{itemize}
+
+\begin{table}[htbp]
+  \caption{研究局限性与影响范围}
+  \label{tab:limitations}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~6-9}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~6-9}
+  \caption{本文结论适用边界示意图}
+  \label{fig:applicability-boundary}
+\end{figure}
+
+\section{本章小结}
+
+本章从实验环境、数据集与任务设置、评价指标、核心结果展示、结果讨论与局限性分析六个方面，对本文所提出的 PyTOD--FlashANNS 融合异常检测系统进行了统一实验验证。实验结果表明，两阶段融合架构能够在保持合理检测效果的前提下显著提升系统整体吞吐率；其中，GPU 主导端到端执行链路降低了 CPU$\leftrightarrow$GPU 数据搬运与阶段同步开销，多 GPU replicated 扩展进一步提升吞吐，而 GPU 侧归并与拓扑感知 I/O 控制在更复杂场景下补足扩展能力\citep{xiao2025flashanns,cuvs_multi_gpu_nn,gds_overview}。
+
+
+

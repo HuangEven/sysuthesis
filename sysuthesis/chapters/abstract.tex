@@ -1,0 +1,32 @@
+% !TEX root = ../main.tex
+
+\sysusetup{
+  keywords  = {异常检测, PyTOD, FlashANNS, RAPIDS, FAISS-GPU, GPU 常驻执行, 多 GPU 扩展, 近似最近邻检索, 金融风控},
+  keywords* = {Outlier Detection, PyTOD, FlashANNS, RAPIDS, FAISS-GPU, GPU-Resident Execution, Multi-GPU Scaling, Approximate Nearest Neighbor Search, Financial Risk Control},
+}
+
+\begin{abstract}
+面向金融风控、反欺诈、反洗钱与交易监测等场景，异常检测系统不仅需要具备对少量高风险样本的识别能力，还需要在大规模数据条件下满足严格的吞吐与时延要求。随着金融交易规模持续增长，异常检测系统面临的主要矛盾已经从单一模型精度不足，逐渐演化为异常评分复杂度高、候选召回开销大、CPU 与 GPU 之间数据传输频繁、多 GPU 扩展效率受限等系统性问题\citep{aggarwal2017outlier,zhao2022tod}。传统基于 CPU 的异常检测系统在高维和大规模数据条件下难以同时兼顾检测效果与近实时处理能力；而仅对单一检测算法或单一向量检索模块进行 GPU 加速，也难以从系统层面打通候选召回、异常评分与并行扩展之间的协同关系\citep{zhao2022tod,xiao2025flashanns}。
+
+针对上述问题，本文围绕金融大规模数据异常检测任务，提出并实现了一种基于并行计算的 \textbf{PyTOD--FlashANNS 融合异常检测系统}。该系统以 PyTOD 作为异常评分主干，以 FlashANNS 作为高吞吐候选召回模块，在统一的数据流、算子流与调度流框架下构建候选召回与异常评分协同执行链路\citep{zhao2022tod,xiao2025flashanns}。
+
+在单 GPU 场景下，本文提出了 \textbf{GPU 主导的端到端执行链路}。在 FlashANNS 提供的异步 I/O---计算流水线基础上，将查询特征、候选检索结果与异常评分中间张量尽量保持在 GPU 侧，仅在必要时通过 pinned memory 等机制完成主机侧交互，从而同时减少 SSD-I/O 与 GPU 计算之间的串行等待，以及 CPU 与 GPU 之间的不必要数据搬运\citep{xiao2025flashanns,rapids_rmm_pinned,gds_overview}。针对原始系统中存在的中间结果序列化与主机侧频繁参与候选组织的问题，本文进一步引入 RAPIDS 对特征处理与表格型中间结果组织路径进行 GPU 化重构，并结合 FAISS-GPU 对候选检索后端进行工程化增强\citep{rapids_cudf_pandas,faiss_gpu_wiki}。
+
+在多 GPU 场景下，本文设计并实现了基于\textbf{数据并行与索引复制}的扩展方案。系统优先采用 replicated 架构，使每张 GPU 独立完成本地候选召回与异常评分，CPU 主要承担控制面调度与最终小规模结果汇总职责\citep{cuvs_multi_gpu_nn,cuvs_dist_mode}。当索引容量或业务约束导致必须跨卡归并时，本文将归并逻辑尽量下沉到 GPU 侧，并通过 NCCL 实现设备间通信，同时结合拓扑感知的 I/O lane 绑定与准入控制，降低共享存储路径对多卡扩展效率的影响\citep{nccl_stream_semantics,gds_design_guide}。
+
+在实验设计方面，本文采用 1M 规模真实或半真实数据集对方法有效性进行验证，并构建 10M 与 50M 等规模的高保真合成扩展数据集对系统吞吐、时延与扩展能力进行测试\citep{ieee_cis_fraud,ibm_aml_data,dgraphfin_baseline}。实验结果表明，本文所提出的 PyTOD--FlashANNS 融合系统能够在保证检测效果可接受的前提下显著提升系统整体吞吐率，并有效降低 CPU--GPU 数据往返与阶段同步开销；在多 GPU 场景中，数据并行与索引复制策略能够较好地支撑系统扩展\citep{xiao2025flashanns,cuvs_multi_gpu_nn}。
+
+本文的研究重点不在于提出新的异常检测理论模型，而在于围绕金融大规模数据异常检测任务，构建一条覆盖候选召回、异常评分、数据路径优化与多 GPU 扩展的完整系统实现路线。研究结果表明，PyTOD 与 FlashANNS 的融合能够有效打通异常检测中的计算瓶颈、存储瓶颈与并行扩展瓶颈，为金融场景下高吞吐、近实时异常检测系统的工程实现提供可行方案\citep{zhao2022tod,xiao2025flashanns}。
+\end{abstract}
+
+\begin{abstract*}
+In financial risk control scenarios such as fraud detection and anti-money laundering, outlier detection systems must not only identify a small number of high-risk samples, but also satisfy stringent throughput and latency requirements under large-scale data. As transaction volumes grow, the major challenges have shifted from purely model accuracy to system-level constraints, including expensive scoring, costly candidate retrieval, frequent CPU--GPU transfers, and limited scaling efficiency on multiple GPUs.
+
+To address these challenges, this thesis proposes and implements a parallel-computing-based \emph{PyTOD--FlashANNS} integrated outlier detection system. PyTOD serves as the GPU scoring backbone, while FlashANNS provides high-throughput candidate retrieval. The two components are orchestrated in a unified pipeline so that the system first retrieves a bounded candidate set from massive data, and then performs tensorized scoring on the candidates to improve end-to-end efficiency while maintaining acceptable detection effectiveness.
+
+For the single-GPU setting, we design a GPU-dominant end-to-end execution path. Query features, retrieved candidates, and intermediate scoring tensors are kept on the device whenever possible, and host interaction is restricted to necessary boundaries via pinned memory, thereby reducing both SSD I/O stalls and avoidable CPU--GPU data movement. We further migrate selected feature processing and tabular intermediate transformations to RAPIDS, and enhance the retrieval backend with FAISS-GPU to improve device-side data processing efficiency and retrieval throughput.
+
+For the multi-GPU setting, we implement a data-parallel replicated architecture in which each GPU independently completes local candidate retrieval and scoring, while the CPU primarily acts as a control-plane scheduler for load balancing and small-result collection. When cross-device merging is unavoidable due to index capacity constraints, the merge logic is pushed down to GPUs with NCCL communication, and topology-aware I/O lane binding and admission control are employed to mitigate contention on shared storage paths.
+
+Extensive experiments on real/semi-real datasets at the 1M scale and high-fidelity synthetic datasets at the 10M and 100M scales show that the proposed system improves end-to-end throughput while reducing CPU--GPU transfers and synchronization overhead, and demonstrates stable throughput scaling under multi-GPU deployment.
+\end{abstract*}

@@ -1,0 +1,330 @@
+% !TEX root = ../main.tex
+
+\chapter{单卡场景下的系统设计与数据路径优化}
+
+\section{单卡系统需求与总体架构}
+
+在完成第三章的任务建模、数据准备和 PyTOD--FlashANNS 融合执行流程设计之后，本文进一步将研究重点转向系统实现层面，即在单 GPU 条件下，如何通过合理的数据路径组织与执行链路压缩，使异常检测系统在保证检测效果的前提下获得更高吞吐率和更低延迟。单卡场景在本文中具有两重意义：其一，它是多 GPU 扩展的基础，只有单卡执行链路足够高效，多卡扩展才有现实意义；其二，它能够更清晰地暴露系统瓶颈，特别是 CPU$\leftrightarrow$GPU 数据往返、候选结果组织、I/O 等待与算子间同步等问题\citep{xiao2025flashanns,zhao2022tod}。
+
+从系统需求出发，单卡异常检测系统需要同时满足以下三个目标。第一，系统必须能够在有限显存条件下稳定处理大规模输入，并通过合理的批处理组织支撑候选召回与异常评分连续执行。第二，系统必须尽量减少 CPU 对数据平面的介入，使查询特征、候选结果与评分中间张量尽量驻留在 GPU 侧，从而避免高频主机---设备拷贝开销。第三，系统必须能够在存在外存访问或多阶段流水线的情况下有效重叠 I/O 与 GPU 计算，尽量压缩串行等待时间。换言之，单卡优化的重点并不是单独提升某一个算子的执行速度，而是构建一条以 GPU 为核心、以低开销中间结果传递为特征的端到端执行链路\citep{xiao2025flashanns,gds_overview,gds_design_guide}。
+
+基于这一目标，本文将单卡系统划分为五个核心模块：数据接入与预处理模块、查询向量组织模块、候选召回模块、异常评分模块以及结果输出与日志模块。数据接入与预处理模块负责接收原始金融记录、完成字段规范化与基础特征整理；查询向量组织模块负责将预处理结果转换为适合 ANN 检索与异常评分使用的统一设备侧表示；候选召回模块由 FlashANNS 与 FAISS-GPU 协同支撑，负责从大规模索引中高吞吐返回候选集合；异常评分模块以 PyTOD 为核心，在候选集合上执行张量化评分；结果输出与日志模块则负责在必要时将最终小规模结果回传主机，并记录实验和运行时指标。整个系统的总体设计目标，是使这些模块不再以``CPU 预处理---GPU 检索---CPU 整理---GPU 评分''的方式分段执行，而是围绕 GPU 主导路径进行重构\citep{zhao2022tod,faiss_gpu_wiki}。
+
+从执行结构上看，本章所研究的单卡系统并不将 FlashANNS 和 PyTOD 看作两个彼此独立的程序，而是将其视为一条统一链路中的前后阶段。前者负责高吞吐候选召回，后者负责精细异常评分；二者之间通过设备侧中间结果表达和统一接口进行衔接。基于这一思路，本文在后续各节中将依次分析原始链路中的主要瓶颈，提出 GPU 主导的端到端执行链路，并进一步通过 RAPIDS、FAISS-GPU、pinned memory、异步 stream 和双缓冲等机制对单卡系统进行系统性优化\citep{rapids_cudf_pandas,rapids_rmm_pinned,faiss_gpu_wiki}。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-1 单卡异常检测系统总体架构图。} 展示数据接入、查询向量组织、候选召回、异常评分与结果输出五个模块之间的关系。
+  \item \textbf{表 4-1 单卡系统模块职责表。} 列出各模块输入、输出、主要功能和数据驻留位置。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-1}
+  \caption{单卡异常检测系统总体架构图}
+  \label{fig:single-gpu-arch}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{单卡系统模块职责}
+  \label{tab:single-gpu-modules}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-1}
+\end{table}
+
+\section{单卡场景下的瓶颈分析}
+
+尽管第三章已经完成了 PyTOD--FlashANNS 融合流程的构建，但从系统执行效率角度看，原始链路仍存在显著瓶颈。其根本原因在于，系统中各阶段虽然都可以正常运行，但它们的连接方式仍然保留了典型的``CPU 主导分段执行''特征：查询特征常在 CPU 侧被整理，候选结果往往在 GPU 上产生后又回到 CPU 侧进行重组，而后续异常评分又再次依赖 GPU。这种链路在功能上可行，却会在高并发或大规模场景下引入大量不必要的传输、同步与等待\citep{zhao2022tod,faiss_gpu_wiki}。
+
+首先，CPU 与 GPU 之间的高频数据往返会显著削弱候选召回和异常评分的单点加速收益。FAISS-GPU 文档指出，GPU 索引既可接收 host 指针，也可接收 device 指针；当输入本来就在与索引相同的 GPU 上时，不发生拷贝且速度最快，否则会发生 CPU$\rightarrow$GPU 或跨设备拷贝，结果也会在完成后返回相应位置\citep{faiss_gpu_wiki}。这意味着，如果查询特征在 CPU 侧完成拼接和标准化，再每批次传输到 GPU，则即便 GPU 检索本身很快，整条链路仍要为 H2D 传输持续付费。更进一步，如果候选结果从 GPU 返回 CPU 后再被整理为 PyTOD 输入，则后续评分前又会发生一次 H2D 传输，最终形成``CPU 组织---GPU 检索---CPU 整理---GPU 评分''的双向往返模式。这种模式在实验规模较小时不一定显著，但在百万级以上输入和高并发场景下会迅速累积，成为系统主瓶颈之一\citep{faiss_gpu_wiki,rapids_rmm_pinned}。
+
+其次，候选中间结果的组织方式会引入额外的序列化和同步开销。候选召回模块返回的通常不仅是候选样本 ID，还可能包含局部距离、索引位置或局部排序信息。若这些结果被设计为 CPU 侧优先解释的数据结构，例如 Python 对象列表、pandas DataFrame 或主机侧稀疏结构，则后续 PyTOD 在 GPU 上评分前必须重新完成设备侧重建。这个过程不仅带来数据复制成本，也会破坏 GPU 对中间张量的连续访问与批量组织能力。TOD/PyTOD 论文强调，很多异常检测过程之所以适合 GPU 执行，正是因为其可以通过统一张量表达避免大量中间对象搬运和重新组织\citep{zhao2022tod}。因此，在单卡系统中，若候选结果不能以设备侧友好的方式表达和传递，则后续评分模块将很难形成低开销连续执行链路。
+
+再次，当候选召回需要访问外存或存在较明显的 I/O 压力时，SSD-I/O 与 GPU 计算之间的串行等待会进一步放大系统开销。FlashANNS 工作指出，传统 out-of-core ANN 系统的主要问题之一在于 SSD 访问与 GPU 计算无法有效重叠，系统被迫在``读数据---等数据---算数据''的串行节奏中推进，从而使高性能 GPU 长时间等待 I/O 完成\citep{xiao2025flashanns}。若本文系统在单卡场景中仅把 FlashANNS 当作独立召回模块而不继续压缩后续评分路径，则虽然检索内部的 I/O 等待部分被隐藏，但候选召回结束后的 CPU 侧数据组织和评分前准备仍然会重新形成串行等待链条。因此，单卡优化不能只依赖某一个模块的局部加速，而必须从端到端执行链路出发识别瓶颈。
+
+最后，内存分配与资源组织方式也会在单卡环境下引入隐式开销。FAISS-GPU 文档说明，\texttt{StandardGpuResources} 会预先保留 scratch memory，以避免频繁 \texttt{cudaMalloc/cudaFree} 导致的同步和性能恶化\citep{faiss_gpu_wiki}；RMM 文档则指出，页锁定主机内存与内存池机制对于稳定传输和减少分配抖动具有重要作用\citep{rapids_rmm_pinned}。这说明，在单卡系统中，即便查询路径和候选结果传递已经尽量保持在 GPU 侧，如果系统仍在热路径中频繁申请/释放临时缓冲区，也会因资源管理而造成明显性能损失。
+
+综上所述，本文将单卡场景下的瓶颈概括为四类：其一，查询与候选结果在 CPU 和 GPU 之间的高频往返；其二，候选中间结果的主机侧重组与序列化；其三，SSD-I/O 与 GPU 计算之间的串行等待；其四，内存与资源管理导致的隐式同步。这四类问题共同说明，单卡系统要获得真正的高吞吐提升，必须从``模块可运行''转向``数据路径低开销''。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-2 原始单卡执行链路瓶颈剖面图。} 以时间线形式展示查询组织、H2D 拷贝、候选检索、D2H 候选返回、CPU 重组、再次 H2D 评分等步骤。
+  \item \textbf{表 4-2 单卡原始链路主要瓶颈分类表。} 列出瓶颈类型、产生位置、影响对象和后续优化方向。
+  \item \textbf{图 4-3 单卡阶段耗时占比示意图。} 用于展示在原始实现中 CPU 预处理、GPU 检索、CPU 重组和 GPU 评分各阶段的相对开销。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-2}
+  \caption{原始单卡执行链路瓶颈剖面图}
+  \label{fig:baseline-bottlenecks}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{单卡原始链路主要瓶颈分类}
+  \label{tab:single-gpu-bottlenecks}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-2}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-3}
+  \caption{单卡阶段耗时占比示意图}
+  \label{fig:single-stage-share}
+\end{figure}
+
+\section{GPU 主导的端到端执行链路设计}
+
+针对上一节所分析的瓶颈，本文提出面向单卡场景的\textbf{GPU 主导端到端执行链路}。该设计的基本思想是：在 FlashANNS 提供的异步 I/O---计算流水线基础上，将查询特征、候选检索结果与异常评分中间张量尽量保持在 GPU 侧，仅在必要时通过 pinned memory 等机制完成主机侧交互，从而同时减少 SSD-I/O 与 GPU 计算之间的串行等待，以及 CPU$\leftrightarrow$GPU 之间的不必要数据搬运\citep{xiao2025flashanns,faiss_gpu_wiki,rapids_rmm_pinned}。
+
+从总体原则上看，GPU 主导端到端执行链路包含三层含义。第一，查询特征应尽量在 GPU 侧完成最终组织，而不是在 CPU 上完成全部拼接后整体传入 GPU。第二，候选召回结果应尽量以设备侧可直接消费的形式传递给异常评分模块，避免在主机上重新表示和组装。第三，异常评分阶段所产生的中间张量应继续驻留在 GPU 侧执行，只有最终分数、排序结果或必要日志信息才回传 CPU。该设计从根本上压缩了系统中的``主机---设备---主机---设备''折返路径，使系统不再依赖 CPU 对中间结果进行高频组织\citep{zhao2022tod,faiss_gpu_wiki}。
+
+\subsection{查询特征在 GPU 侧的驻留与组织}
+
+在原始实现中，金融交易数据通常先以表格形式在 CPU 侧完成清洗、归一化和拼接，再整体打包为查询向量传入 GPU。该路径的主要问题在于：即便后续候选检索和异常评分都在 GPU 侧完成，查询特征本身仍需要频繁通过 H2D 传输进入设备，从而形成高频入口开销。针对这一问题，本文将部分预处理与特征组织迁移到 GPU 数据处理后端，使关键查询向量尽量在设备侧形成最终表示。RAPIDS/cuDF 提供的 GPU DataFrame、批量列运算和统计聚合能力，使这一点在工程上具备可行性\citep{rapids_cudf_pandas}。通过将归一化、编码、窗口统计后的特征直接组织为设备侧向量，系统能够显著减少查询特征从 CPU 进入 GPU 的边界频次和复制体积。
+
+\subsection{候选检索结果在 GPU 侧的保持与传递}
+
+候选召回阶段结束后，系统面临的关键问题是：候选结果应以何种形式进入异常评分模块。本文选择尽量保持候选结果为 device-resident 对象，即候选 ID、局部距离和必要索引信息不先回 CPU 再重建，而是在 GPU 上直接组织为后续 PyTOD 可消费的中间张量。FAISS-GPU 文档指出，同 GPU 上的输入与输出可以避免额外拷贝，且 \texttt{GpuResources} 可通过预分配 scratch memory 降低中间缓冲区分配开销\citep{faiss_gpu_wiki}。因此，本文在候选返回路径上优先采用设备侧连续缓冲区或张量表示，使 FlashANNS/FAISS-GPU 的输出更自然地流入 PyTOD 评分阶段。
+
+\subsection{异常评分中间张量的 GPU 常驻执行}
+
+PyTOD 评分阶段本身具备张量化执行基础\citep{zhao2022tod}，因此在本文设计中，其主要中间表示包括候选距离矩阵、局部排序结果、聚合统计量和最终异常分数。这些对象一旦被回传 CPU，不仅会引入 D2H 开销，还会破坏 PyTOD 在 GPU 上连续执行和批量算子复用的优势。为此，本文将评分阶段的中间张量全部保留在 GPU 侧执行，直到得到最终小规模输出后再根据需要回传主机。
+
+\subsection{必要条件下的主机侧交互与 pinned memory 机制}
+
+需要指出的是，GPU 主导执行并不意味着 CPU 在单卡系统中完全消失。对于原始输入读取、部分日志写回、结果落盘和特定部署场景下的主机侧接口，系统仍然不可避免地需要与 CPU 交互。因此，本文并不主张``完全取消主机交互''，而是主张``将主机交互限制在必要边界，并通过 pinned memory 等机制降低开销''。RMM 文档指出，\texttt{PinnedHostMemoryResource} 可提供页锁定主机内存，从而加快 Host$\leftrightarrow$Device 数据传输\citep{rapids_rmm_pinned}。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-4 GPU 主导端到端执行链路总图。} 展示查询特征、候选结果和异常评分中间张量尽量驻留 GPU 的整体流程。
+  \item \textbf{图 4-5 查询特征 CPU 路径与 GPU 路径对比图。} 对比传统 CPU 预处理后整体传入 GPU 与本文 GPU 侧组织方式的差异。
+  \item \textbf{图 4-6 候选结果与评分中间张量驻留示意图。} 展示哪些对象保留在 GPU，哪些对象在边界才回传 CPU。
+  \item \textbf{表 4-3 单卡数据驻留策略表。} 列出主要数据对象、默认驻留位置、是否需要主机交互以及采用的优化方式。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-4}
+  \caption{GPU 主导端到端执行链路总图}
+  \label{fig:gpu-dominant-pipeline}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-5}
+  \caption{查询特征 CPU 路径与 GPU 路径对比}
+  \label{fig:query-cpu-vs-gpu}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-6}
+  \caption{候选结果与评分中间张量驻留示意图}
+  \label{fig:residency-map}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{单卡数据驻留策略}
+  \label{tab:single-gpu-residency}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-3}
+\end{table}
+
+\section{基于 FlashANNS 的异步 I/O---计算流水线融合}
+
+在上一节确立 GPU 主导执行链路之后，本节进一步解决另一类关键问题：如何把候选召回阶段内部的 I/O 与 GPU 计算等待压缩到最低。FlashANNS 的设计表明，传统 out-of-core 检索系统存在明显的串行等待特征；而通过 dependency-relaxed asynchronous pipeline，可以使 I/O 和 GPU 计算在更大程度上重叠，从而显著提升候选召回吞吐\citep{xiao2025flashanns}。因此，本文在单卡系统中将 FlashANNS 的异步 I/O---计算流水线与 GPU 主导执行链路进一步融合。
+
+具体而言，系统在候选召回阶段不再将 SSD-I/O 视为必须先完成的前置步骤，而是将检索中的部分访问与 GPU 侧局部计算、候选维护和后续评分准备过程并行化组织。对于检索内部而言，这意味着查询在等待部分图节点或向量块从 SSD 到达时，GPU 可以继续推进已到达部分的距离计算和候选维护；对于本文系统整体而言，这意味着候选召回的``等待时间''被更多地隐藏在设备侧计算中，而不再表现为对后续评分阶段的显式阻塞。本文并不是简单调用 FlashANNS 作为黑盒检索模块，而是将其``重叠 I/O 与计算''的执行思想纳入整个异常检测链路的设计中。
+
+这一融合的直接收益体现在两个方面。第一，单卡系统中候选召回阶段的有效吞吐被提高，使得 PyTOD 评分模块能够更连续地得到候选输入，而不是周期性地等待检索完成。第二，由于候选召回结果本身继续保留在 GPU 侧，中间结果无需再回 CPU 等待整理，因此 FlashANNS 内部的 I/O---计算重叠收益不会在后续阶段被新的主机侧阻塞所抵消。即，FlashANNS 的异步流水线解决``候选召回内部怎么更快''，GPU 主导执行链路解决``召回完之后怎么更快地进入评分''。
+
+从实现角度看，这一融合要求系统在单卡场景下对流、缓冲区和中间结果表达进行统一组织。FlashANNS 对 warp 级并发 SSD 访问和双缓冲思想的使用，表明这种``边访问边计算''的路径具有现实可行性\citep{xiao2025flashanns}。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-7 FlashANNS 异步 I/O---计算流水线与本文执行链路融合图。} 展示候选召回内部的 I/O---计算重叠，以及其与后续评分准备阶段的衔接。
+  \item \textbf{图 4-8 优化前后时间线对比图。} 对比``检索 I/O 完成后再评分准备''和``检索 I/O---计算重叠 + 设备侧候选传递''两种时间线。
+  \item \textbf{表 4-4 单卡 I/O---计算重叠优化项列表。} 列出异步 I/O、双缓冲、warp 级并发访问、设备侧候选缓存等关键机制及其作用。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-7}
+  \caption{FlashANNS 异步 I/O---计算流水线与本文执行链路融合}
+  \label{fig:io-compute-integration}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-8}
+  \caption{优化前后时间线对比}
+  \label{fig:timeline-compare}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{单卡 I/O---计算重叠优化项列表}
+  \label{tab:io-compute-opts}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-4}
+\end{table}
+
+\section{数据处理与计算后端优化}
+
+在完成 GPU 主导执行链路和 FlashANNS 异步流水线融合之后，单卡系统仍需要进一步优化数据处理与计算后端，以减少表格型中间结果处理和设备资源管理所带来的额外开销。为此，本文在原始 PyTorch/CPU 数据路径基础上引入 RAPIDS 体系，对金融数据预处理、特征拼接、中间结果组织和批量统计环节进行后端重构\citep{rapids_cudf_pandas,rapids_rmm_pinned}。
+
+具体而言，数据处理与计算后端优化主要包含四个方面。第一，将部分原本在 CPU/pandas 路径中完成的字段筛选、类型转换和窗口统计迁移到 cuDF 侧，以减少前置预处理对 GPU 主链路的阻塞。第二，将候选结果的部分表格型组织、批量拼接和统计聚合转移到 GPU DataFrame 和 CuPy 张量表达上，降低主机端列表对象和 pandas 对象的构建开销。第三，引入 RMM 内存池和页锁定主机内存资源，以减少中间缓冲区反复分配所带来的抖动，并为必要的主机边界交互提供更稳定的数据交换方式\citep{rapids_rmm_pinned}。第四，在保证与 PyTOD 和检索后端接口兼容的前提下，统一采用设备侧连续缓冲和张量对象表达中间结果，尽量避免``先 DataFrame 再 Python 对象再 Tensor''的反复转换路径。
+
+需要特别指出的是，RAPIDS 在本文中承担的是``后端工程增强组件''而不是``核心检测模块''角色。其价值体现在帮助系统更容易构建 GPU 常驻链路、更稳定地组织中间结果和更高效地管理内存资源，而不是替代候选召回或异常评分。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-9 数据处理与计算后端重构图。} 展示从 CPU/pandas 路径迁移到 RAPIDS/cuDF 路径的主要变化。
+  \item \textbf{表 4-5 数据处理后端优化清单。} 列出具体迁移项、迁移前路径、迁移后路径、主要收益。
+  \item \textbf{图 4-10 中间结果表达形式演化图。} 展示中间结果从主机对象表达向设备侧连续张量表达的变化。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-9}
+  \caption{数据处理与计算后端重构图}
+  \label{fig:backend-refactor}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{数据处理后端优化清单}
+  \label{tab:backend-opts}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-5}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-10}
+  \caption{中间结果表达形式演化图}
+  \label{fig:intermediate-evolution}
+\end{figure}
+
+\section{候选检索后端优化}
+
+除了数据处理后端的重构外，候选检索后端本身也需要进一步工程化优化。虽然 FlashANNS 提供了高吞吐候选召回机制，但在实际系统实现中，检索后端不仅要关注检索内部的吞吐，还要关注与查询输入、候选输出以及评分模块之间的接口组织方式。FAISS-GPU 在这方面提供了成熟的工程支撑，其 host/device 指针互操作、资源对象管理和多种 GPU 索引形式，使其非常适合作为本文系统中的候选检索后端增强组件\citep{faiss_gpu_wiki}。
+
+本文的后端优化工作集中体现在三个方面。首先，统一检索输入接口，使查询向量能够以设备侧对象直接进入检索后端，避免不同检索组件之间对输入格式有不同要求。其次，统一候选输出接口，使 FlashANNS 或 FAISS-GPU 返回的候选结果都能以 GPU 侧张量形式被 PyTOD 消费，从而减少不同后端实现带来的中间转换。最后，统一资源管理策略，通过 FAISS 的 \texttt{GpuResources} 与系统侧缓冲区管理配合，降低临时缓冲区申请和释放的频率，稳定检索阶段的延迟与吞吐表现\citep{faiss_gpu_wiki}。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-11 候选检索后端统一接口图。} 展示查询输入、检索后端、候选结果输出和评分模块之间的统一接口。
+  \item \textbf{表 4-6 候选检索后端优化项表。} 列出输入接口统一、输出格式统一、资源管理统一等关键优化项。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-11}
+  \caption{候选检索后端统一接口图}
+  \label{fig:recall-backend-interface}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{候选检索后端优化项}
+  \label{tab:recall-backend-opts}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-6}
+\end{table}
+
+\section{单卡执行链路的工程增强}
+
+在完成数据路径、异步流水线和后端优化后，系统仍然需要若干工程增强机制来保证单卡链路在高负载下保持稳定。这些工程增强主要包括异步 CUDA stream 组织、双缓冲与微批执行、显存碎片控制以及日志和性能采样机制。
+
+在流组织方面，本文通过将查询准备、候选检索、评分计算和必要的主机边界交互映射到不同 CUDA stream，使数据传输、检索和评分能够在更大程度上并行推进。FAISS 文档对 GPU 资源和 stream 的使用方式给出了说明，使得后端资源对象可以与本文的流组织方案自然结合\citep{faiss_gpu_wiki}。在缓冲方面，本文采用双缓冲与微批组织方式：当当前批次进入候选召回与评分阶段时，下一批次的输入组织和部分准备可以并行进行，从而进一步压缩流水线空泡。
+
+在显存管理方面，本文通过限制中间张量生命周期、统一缓冲区尺寸以及使用内存池机制减少碎片和反复分配开销\citep{rapids_rmm_pinned}。最后，在监控与可观察性方面，本文建立统一日志字段与性能采样机制，记录查询输入规模、候选集合规模、各阶段耗时、GPU 利用率和 Host$\leftrightarrow$Device 交互次数，为后续章节多 GPU 扩展提供统一分析基础。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{图 4-12 单卡异步 stream 与双缓冲组织图。} 展示查询准备、候选检索和评分阶段在不同 stream 上的推进关系。
+  \item \textbf{表 4-7 单卡工程增强项总表。} 列出流组织、缓冲、内存管理、监控与日志增强项。
+  \item \textbf{图 4-13 单卡显存使用与缓冲区关系示意图。} 用于说明中间张量、候选结果和资源池之间的关系。
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-12}
+  \caption{单卡异步 stream 与双缓冲组织图}
+  \label{fig:streams-double-buffer}
+\end{figure}
+
+\begin{table}[htbp]
+  \caption{单卡工程增强项总表}
+  \label{tab:single-gpu-engineering}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-7}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-13}
+  \caption{单卡显存使用与缓冲区关系示意图}
+  \label{fig:mem-buffers}
+\end{figure}
+
+\section{单卡实验与性能分析}
+
+为了验证前述单卡系统设计与数据路径优化的有效性，本文在 1M 与 10M 规模数据上组织单卡实验，重点比较以下几类方案：原始分段执行链路、仅启用候选召回加速的链路、启用 GPU 主导执行链路但不做后端重构的链路，以及本文完整的单卡优化方案。实验关注的指标包括吞吐率、平均延迟与 p99 延迟、CPU$\leftrightarrow$GPU 传输次数与体积、GPU 利用率、I/O 利用率以及各阶段耗时分解。
+
+实验结果表明，单纯依赖候选召回加速虽然能够降低部分检索耗时，但若候选结果仍需回到 CPU 侧整理再进入评分，则系统吞吐提升有限。相反，当查询特征、候选结果与评分中间张量尽量保持在 GPU 侧后，CPU$\leftrightarrow$GPU 数据往返次数显著减少，系统端到端吞吐率明显提升，延迟分位数也更稳定。进一步地，当将 FlashANNS 的异步 I/O---计算流水线与设备侧连续执行链路结合后，候选召回阶段的等待被部分隐藏，评分阶段能够更连续地接收输入，从而使 GPU 利用率提升更明显\citep{xiao2025flashanns}。
+
+从阶段耗时分解来看，优化前系统的主要开销集中在查询组织、候选结果主机侧重组和阶段同步等待；优化后，瓶颈更多地转移到设备侧检索与评分本身。换言之，本章的单卡优化并未简单地``把某一个模块做快''，而是改变了系统瓶颈的分布，使系统从``被数据路径拖慢''转变为``更多由 GPU 侧核心阶段决定性能''。
+
+\paragraph{图表预留说明：}
+\begin{itemize}
+  \item \textbf{表 4-8 单卡实验设置表。} 列出数据规模、批大小、候选数量、比较方案和硬件配置。
+  \item \textbf{图 4-14 单卡各阶段耗时分解图。} 展示优化前后查询组织、检索、候选重组、评分和输出阶段的耗时变化。
+  \item \textbf{图 4-15 单卡吞吐率与延迟对比图。} 对比不同单卡方案的 QPS、平均延迟和 p99 延迟。
+  \item \textbf{图 4-16 CPU$\leftrightarrow$GPU 传输开销变化图。} 展示传输次数、传输体积和占比变化。
+  \item \textbf{图 4-17 GPU 利用率与 I/O 利用率变化图。} 用于说明单卡优化后资源利用率的改善。
+\end{itemize}
+
+\begin{table}[htbp]
+  \caption{单卡实验设置}
+  \label{tab:single-gpu-exp-setup}
+  \centering
+  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~4-8}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-14}
+  \caption{单卡各阶段耗时分解}
+  \label{fig:single-stage-breakdown}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-15}
+  \caption{单卡吞吐率与延迟对比}
+  \label{fig:single-throughput-latency}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-16}
+  \caption{CPU$\leftrightarrow$GPU 传输开销变化}
+  \label{fig:h2d-d2h-change}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \thesisplaceholderbox{正式版补齐图~4-17}
+  \caption{GPU 利用率与 I/O 利用率变化}
+  \label{fig:utilization-change}
+\end{figure}
+
+\section{本章小结}
+
+本章围绕单 GPU 场景下的系统实现问题，系统分析了原始 PyTOD--FlashANNS 融合链路中存在的 CPU$\leftrightarrow$GPU 数据往返、候选中间结果主机侧重组、SSD-I/O 串行等待以及资源管理抖动等瓶颈，并在此基础上提出了 GPU 主导的端到端执行链路。该链路在 FlashANNS 异步 I/O---计算流水线的基础上，将查询特征、候选结果与异常评分中间张量尽量保持在 GPU 侧，仅在必要边界通过 pinned memory 等机制与主机交互，从而显著压缩了系统数据路径和阶段同步开销\citep{xiao2025flashanns,faiss_gpu_wiki,rapids_rmm_pinned}。
+
+同时，本文进一步引入 RAPIDS 与 FAISS-GPU 对数据处理与候选检索后端进行工程增强，并通过异步 stream、双缓冲、内存池与统一监控机制提升单卡链路的稳定性与可观察性。实验结果表明，单卡系统的主要性能收益并不来自某一个算子的局部优化，而来自``候选召回---异常评分''整条链路的数据路径压缩与设备侧连续执行。也正因为单卡场景中的瓶颈已经被尽可能收束到 GPU 侧核心阶段，第五章才能在此基础上进一步讨论多 GPU 条件下的数据并行、索引复制、GPU 侧归并与拓扑感知 I/O 控制问题。
+
+
+
