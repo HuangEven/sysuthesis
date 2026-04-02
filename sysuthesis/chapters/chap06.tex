@@ -12,6 +12,8 @@
 
 在实现配置上，本文将实验分为三类：\textbf{方法有效性验证实验}（1M 规模真实/半真实数据）、\textbf{单卡系统性能实验}（端到端吞吐、延迟与资源利用）、以及\textbf{多 GPU 扩展实验}（replicated 扩展性、控制面开销、GPU 侧归并与 I/O lane 控制）。三类实验共享一套基础代码框架，但在数据规模、硬件使用方式和评价指标侧重点上存在差异。
 
+表~\ref{tab:hw-config} 和表~\ref{tab:sw-config} 分别给出了硬件与软件环境快照，图~\ref{fig:exp-topology} 则补充展示了实验平台中 CPU、GPU、SSD 与 PCIe/NUMA 的连接关系，为后续性能差异解释提供硬件背景。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{表 6-1 实验硬件平台配置表。} 包括 GPU 型号与数量、显存容量、CPU 型号、内存容量、SSD 型号与数量、PCIe 版本、NUMA 拓扑等。
@@ -131,6 +133,8 @@
 
 在数据划分方面，有效性验证任务按训练集、验证集和测试集划分；性能与扩展实验采用固定索引集与固定查询集方式，将查询批量持续注入系统，以更准确地衡量吞吐率、延迟与资源利用率。
 
+表~\ref{tab:dataset-task-map} 汇总了数据集与实验任务的对应关系，图~\ref{fig:scale-vs-exp} 展示了规模层级与实验类型的映射，表~\ref{tab:data-split} 则进一步说明了不同实验口径下的数据使用方式。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{表 6-3 数据集与实验任务映射表。} 列出各数据集的来源、规模、特征维度、标签形式以及在本文中的用途。
@@ -231,6 +235,8 @@
 异常检测效果方面，采用 ROC-AUC、PR-AUC 与 Recall@k；候选检索质量方面，采用 Recall@k / Top-$k$ overlap；系统性能方面，采用 QPS、平均延迟与 p95/p99 延迟；资源利用率方面，采用 GPU 利用率、CPU 占用率、显存使用率、I/O 带宽利用率以及 CPU$\leftrightarrow$GPU 传输开销占比。
 
 比较原则方面，本文坚持三项要求：尽量共享相同数据集、相同向量表示和相同硬件配置；比较不同召回配置时控制候选集合规模或召回质量处于同一数量级；多 GPU 实验中采用相同软件环境与相近查询到达方式，确保差异主要来自扩展策略本身。
+
+表~\ref{tab:metrics} 对全文使用的评价指标进行了统一定义，图~\ref{fig:metric-taxonomy} 给出了指标体系结构，表~\ref{tab:fairness-controls} 则明确了比较原则与控制变量。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
@@ -351,6 +357,8 @@
 
 比较 1M、10M、50M 三个规模层级下系统的瓶颈迁移与收益变化，统一呈现``方法有效性''与``系统可扩展性''两条主线。
 
+为便于综合展示，表~\ref{tab:core-summary} 汇总了核心结果，图~\ref{fig:fusion-vs-baselines}、图~\ref{fig:single-gpu-before-after}、图~\ref{fig:multi-gpu-scaling} 和图~\ref{fig:scale-comparison} 分别对应总体对比、单卡优化、多 GPU 扩展以及跨规模表现四个观察视角。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{表 6-7 核心结果汇总表。}
@@ -407,6 +415,8 @@
 
 第四，若扩展曲线在更高 GPU 数量下开始放缓，而 I/O lane 控制实验显示共享存储路径成为主要限制，则说明``多 GPU 上限最终受制于存储路径组织''的判断成立\citep{gds_overview,gds_design_guide}。
 
+图~\ref{fig:discussion-logic} 总结了本节讨论所遵循的因果链条，表~\ref{tab:findings-evidence} 则把关键发现与其对应实验依据进行了对应整理。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 6-8 结果讨论逻辑图。}
@@ -433,6 +443,8 @@
 
 首先，真实超大规模金融数据公开可得性有限，10M 与 100M 规模性能实验主要依赖 IBM AML / AMLSim 等合成数据\citep{ibm_aml_data,ibm_amlsim}。其次，replicated 架构受显存容量限制，索引规模进一步增大时必须转向 sharded 路径并承担更高通信与归并复杂度。第三，out-of-core 路径与拓扑感知 I/O 优化对部署条件依赖较强，其收益与 GPU--SSD--PCIe--NUMA 拓扑、驱动与 GDS 支持高度相关\citep{gds_overview,gds_design_guide}。第四，本文尚未延伸到多机分布式环境。
 
+表~\ref{tab:limitations} 汇总了主要局限性及其影响范围，图~\ref{fig:applicability-boundary} 则用边界示意图说明了本文结论更适用的场景范围。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{表 6-9 研究局限性与影响范围表。}
@@ -456,6 +468,5 @@
 \section{本章小结}
 
 本章从实验环境、数据集与任务设置、评价指标、核心结果展示、结果讨论与局限性分析六个方面，对本文所提出的 PyTOD--FlashANNS 融合异常检测系统进行了统一实验验证。实验结果表明，两阶段融合架构能够在保持合理检测效果的前提下显著提升系统整体吞吐率；其中，GPU 主导端到端执行链路降低了 CPU$\leftrightarrow$GPU 数据搬运与阶段同步开销，多 GPU replicated 扩展进一步提升吞吐，而 GPU 侧归并与拓扑感知 I/O 控制在更复杂场景下补足扩展能力\citep{xiao2025flashanns,cuvs_multi_gpu_nn,gds_overview}。
-
 
 

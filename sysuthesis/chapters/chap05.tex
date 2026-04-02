@@ -14,6 +14,8 @@
 
 因此，本文在设计多 GPU 扩展时，优先采用数据并行与索引复制的 replicated 主方案，使每张 GPU 尽可能独立完成候选召回与异常评分。只有在索引容量或业务约束明确表明无法复制完整索引时，才进入 GPU 侧跨卡归并与设备间通信的兜底方案。第五章的研究重点不在于构造最复杂的多 GPU 检索系统，而在于在金融近实时异常检测场景下找到\textbf{更适合吞吐优先与工程可控性的扩展路径}。
 
+图~\ref{fig:need-multi-gpu} 展示了单卡能力边界如何随数据规模和并发需求逼近上限，表~\ref{tab:multi-gpu-needs} 对扩展动机进行了分类，图~\ref{fig:bottleneck-shift} 则说明瓶颈从单卡阶段向多卡聚合与共享 I/O 路径迁移的过程。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-1 单卡能力上限与多 GPU 扩展需求图。} 展示当数据规模、并发量和索引规模增加时，单卡系统的计算、显存和吞吐上限如何逐步逼近。
@@ -53,6 +55,8 @@
 第三项原则是\textbf{CPU 尽量退出数据平面，仅保留控制面职责}。cuVS 文档提示，多 GPU ANN 的部分实现要求数据集、查询与输出数组位于 host memory，这意味着若直接采用 host-centric 默认路径，则 CPU 与主机内存会重新进入关键路径\citep{cuvs_multi_gpu_ivf_host}。基于这一认识，本文在多 GPU 方案中将 CPU 定位为\textbf{控制面调度者}：其主要职责包括请求队列管理、负载均衡、bounded batching、运行时监控和最终小规模结果汇总。
 
 第四项原则是\textbf{当必须跨卡归并时，归并逻辑应下沉到 GPU 侧，并通过 NCCL 等设备间通信机制完成}。NCCL 文档指出其通信操作会异步入队到 CUDA stream 上执行，但也警告在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream 会形成全局同步点\citep{nccl_stream_semantics}。因此，本文把 GPU 侧归并视为 replicated 主方案失效时的兜底方案：仅当索引容量或业务约束迫使系统进入 sharded 模式时，才引入 GPU 侧合并与必要的 NCCL 通信组织。
+
+图~\ref{fig:multi-gpu-principles} 汇总了多 GPU 方案的四项设计原则，表~\ref{tab:primary-vs-fallback} 对主方案与兜底方案的适用边界进行了归纳，图~\ref{fig:query-parallel-vs-cross} 则直观比较了两类并行路径。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
@@ -94,6 +98,8 @@
 
 从系统工程角度看，索引复制虽然会增加显存占用，但换来了更低的执行复杂度和更清晰的数据路径。其主要优势体现在三个方面：查询在设备间彼此独立；CPU 不必处理大规模局部结果聚合；并且每张 GPU 本地执行路径与第四章单卡优化后链路高度一致，系统可复用既有的 GPU 主导执行链路与 I/O---计算重叠组织方式。
 
+图~\ref{fig:replicated-arch} 给出了 replicated 主方案的总体结构，表~\ref{tab:replicated-pros-cons} 概括了其资源代价与适用场景，图~\ref{fig:single-loop-replicated} 则强调单卡优化链路在多卡上的复用关系。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-5 数据并行与索引复制多 GPU 架构图。} 展示 CPU 控制面、多个 GPU、本地完整索引副本及其独立执行闭环。
@@ -132,6 +138,8 @@
 
 最终结果汇总方面，CPU 仅接收每张 GPU 已完成的最终小规模结果，如异常分数、Top-$k$ 排序结果和必要日志元信息，而不再接收大规模局部候选集合或评分中间张量。
 
+图~\ref{fig:control-plane} 展示了 CPU 控制面的调度与回收流程，表~\ref{tab:control-vs-data-plane} 说明了控制面与数据平面的职责边界，图~\ref{fig:bounded-batching} 则刻画了 bounded batching 与动态负载均衡的工作方式。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-7 CPU 控制面调度流程图。} 展示请求队列、批次形成、GPU 负载监控、请求分发和结果回收路径。
@@ -168,6 +176,8 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 
 在设备间通信实现方面，本文采用 NCCL 作为主要通信机制，并将通信流与局部计算流明确分离。NCCL 文档指出其通信操作异步入队到指定 CUDA stream，但在同一 \texttt{ncclGroupStart/End()} 组内混用多个 stream 会形成全局同步点\citep{nccl_stream_semantics}。
 
+图~\ref{fig:nccl-merge} 展示了 GPU 侧跨卡归并的主要流程，表~\ref{tab:merge-strategies} 总结了不同触发条件下的处理策略，图~\ref{fig:nccl-streams} 则说明 NCCL 通信流与计算流的组织差异。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-9 GPU 侧跨卡归并流程图。} 展示局部结果生成、设备间通信、GPU 侧归并和最终小结果回传的全过程。
@@ -202,6 +212,8 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 
 本文引入\textbf{拓扑感知 I/O lane 绑定与准入控制}机制：运行前分析 GPU、SSD、PCIe root complex、PCIe switch 与 NUMA 节点之间的关系；运行时尽量将 GPU 与 SSD 通道进行 lane 级绑定，并对每条 lane 的 in-flight 请求数做有界控制，以避免过度并发导致尾延迟失控。
 
+图~\ref{fig:topology} 给出了 GPU、SSD、PCIe 与 NUMA 的拓扑关系，图~\ref{fig:io-lane-binding} 说明了 I/O lane 绑定与路径冲突的差异，表~\ref{tab:io-lanes} 则整理了准入控制所使用的关键参数。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-11 GPU--SSD--PCIe--NUMA 拓扑图。}
@@ -234,6 +246,8 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 
 多 GPU 场景下，系统还需要工程增强机制保证运行稳定性与实验可重复性，包括多进程/多 GPU 运行时组织、统一监控指标、异常恢复与请求重试、以及资源隔离和日志管理。
 
+图~\ref{fig:multi-gpu-runtime} 展示了多 GPU 运行时组织方式，表~\ref{tab:multi-gpu-engineering} 汇总了工程增强项，图~\ref{fig:multi-gpu-metrics} 则概括了运行期监控指标体系。
+
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-13 多 GPU 运行时组织图。}
@@ -265,6 +279,8 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 \section{多 GPU 扩展实验与结果分析}
 
 本文在 10M 和 100M 规模合成数据集上组织多 GPU 扩展实验，重点验证 replicated 主方案、跨卡归并兜底方案以及 I/O lane 控制策略的效果。实验关注 QPS、平均延迟与 p99 延迟、CPU 占用、GPU 利用率、设备间通信与 I/O 路径占用。
+
+表~\ref{tab:multi-gpu-exp-setup} 给出了多 GPU 实验设置，图~\ref{fig:qps-vs-gpu} 与图~\ref{fig:latency-quantiles} 展示扩展曲线与延迟分位数变化，图~\ref{fig:cpu-vs-gpu-merge} 和图~\ref{fig:io-lane-impact} 分别用于比较归并路径和 I/O lane 配置的影响，表~\ref{tab:multi-gpu-summary} 对总体结果进行了汇总。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
@@ -323,6 +339,5 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 本章围绕多 GPU 场景下的系统扩展问题，提出并实现了以\textbf{数据并行与索引复制}为核心的主方案，并进一步讨论 CPU 控制面调度、GPU 侧跨卡归并、NCCL 通信以及拓扑感知 I/O lane 绑定与准入控制等关键机制。本文将 CPU 定位为控制面调度者，使每张 GPU 尽可能独立完成本地候选召回与异常评分闭环，从而最大程度保留第四章中已经构建的 GPU 主导执行链路优势\citep{cuvs_multi_gpu_nn,cuvs_dist_mode}。
 
 本章还表明，多 GPU 扩展并不是简单地``增加更多 GPU''，而是一项涉及查询级并行策略、设备间通信语义和存储拓扑组织的系统工程问题。当 replicated 条件成立时，查询级并行与索引复制是吞吐优先场景的扩展路线；当必须跨卡归并时，GPU 侧归并和 NCCL 通信是优于 CPU 聚合的兜底方案；而无论采用哪种路径，多 GPU 上限都将受到 I/O 路径和拓扑关系的强烈影响\citep{gds_overview,nccl_stream_semantics}。
-
 
 
