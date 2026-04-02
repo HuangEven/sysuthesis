@@ -18,8 +18,9 @@ if [[ -f "${PID_FILE}" ]]; then
   rm -f "${PID_FILE}"
 fi
 
-nohup "${SCRIPT_DIR}/auto_commit_push.sh" >> "${LOG_FILE}" 2>&1 &
+nohup "${SCRIPT_DIR}/auto_commit_push.sh" </dev/null >> "${LOG_FILE}" 2>&1 &
 NEW_PID=$!
+disown "${NEW_PID}" 2>/dev/null || true
 printf '%s\n' "${NEW_PID}" > "${PID_FILE}"
 
 printf 'Started auto sync with PID %s.\n' "${NEW_PID}"
