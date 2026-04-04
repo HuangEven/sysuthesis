@@ -14,23 +14,17 @@
 
 表~\ref{tab:hw-config} 和表~\ref{tab:sw-config} 分别给出了硬件与软件环境快照，图~\ref{fig:exp-topology} 则补充展示了实验平台中 CPU、GPU、SSD 与 PCIe/NUMA 的连接关系，为后续性能差异解释提供硬件背景。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 6-1 实验硬件平台配置表。} 包括 GPU 型号与数量、显存容量、CPU 型号、内存容量、SSD 型号与数量、PCIe 版本、NUMA 拓扑等。
-  \item \textbf{表 6-2 实验软件环境配置表。} 包括 Python、PyTorch、PyTOD、RAPIDS、FAISS-GPU、CUDA、NCCL、操作系统和驱动版本。
-  \item \textbf{图 6-1 实验平台拓扑示意图。} 展示 CPU、GPU、SSD、PCIe/NUMA 的连接关系，用于解释后续 I/O lane 相关实验。
-\end{itemize}
-
 \begin{table}[htbp]
   \caption{实验硬件平台配置}
   \label{tab:hw-config}
   \centering
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.3cm}p{5.8cm}p{6.2cm}}
-    \hline
+    \toprule
     项目 & 规格 & 说明 \\
-    \hline
+    \midrule
     CPU 平台 & 2 $\times$ Intel Xeon Gold 6348 @ 2.60GHz & 56 核 112 线程，双 NUMA \\
     主存容量 & 503\,GiB & 系统总内存 \\
     GPU 平台 & 8 $\times$ NVIDIA GeForce RTX 3090 & 24\,GB/卡，总显存 192\,GB \\
@@ -39,8 +33,9 @@
     NUMA 拓扑 & 2 个 NUMA 节点 & NUMA 0 对应 GPU0--GPU3，NUMA 1 对应 GPU4--GPU7 \\
     GPU 互连特征 & 同侧 PIX/PXB，跨侧 SYS & 用于解释双卡与 I/O lane 实验 \\
     网络接口 & 2 $\times$ Mellanox NIC & mlx5\_0，mlx5\_1 \\
-    \hline
+    \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{table}[htbp]
@@ -49,10 +44,11 @@
   \centering
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.6cm}p{6.2cm}p{5.5cm}}
-    \hline
+    \toprule
     项目 & 版本/配置 & 说明 \\
-    \hline
+    \midrule
     操作系统 & Ubuntu 20.04.4 LTS，Linux 5.13.0-30-generic & 实验运行环境 \\
     Python / CUDA & Python 3.11.14；CUDA Runtime 12.4 & 基础运行时环境 \\
     深度学习框架 & PyTorch 2.5.0+cu124；NCCL 2.21.5 & GPU 张量计算与通信环境 \\
@@ -61,8 +57,9 @@
     ANN 检索组件 & FlashANNS / ann\_search（\href{https://github.com/Tinkerver/ann_search}{Tinkerver/ann\_search}） & Preview Release；默认分支 main；无正式 release \\
     其他核心库 & FAISS 1.13.2；PyOD 2.0.6；NumPy 2.2.6；SciPy 1.13.1；scikit-learn 1.6.1 & 实验所用主要 Python 依赖 \\
     RAPIDS 相关 & cuDF / cuML / RMM 未安装 & 非本轮统一复现实验默认依赖 \\
-    \hline
+    \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
@@ -135,30 +132,25 @@
 
 表~\ref{tab:dataset-task-map} 汇总了数据集与实验任务的对应关系，图~\ref{fig:scale-vs-exp} 展示了规模层级与实验类型的映射，表~\ref{tab:data-split} 则进一步说明了不同实验口径下的数据使用方式。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 6-3 数据集与实验任务映射表。} 列出各数据集的来源、规模、特征维度、标签形式以及在本文中的用途。
-  \item \textbf{图 6-2 数据规模层级与实验类型关系图。} 展示 1M、10M、100M 三个层级分别对应的方法有效性、单卡性能和多 GPU 扩展实验。
-  \item \textbf{表 6-4 训练集、验证集和测试集划分说明表。} 说明有效性实验与性能实验在数据使用方式上的差异。
-\end{itemize}
-
 \begin{table}[htbp]
   \caption{数据集与实验任务映射}
   \label{tab:dataset-task-map}
   \centering
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{3.1cm}p{3.3cm}p{1.3cm}p{2.4cm}p{5.3cm}}
-    \hline
+    \toprule
     数据集 & 来源类型 & 规模层级 & 标签形式 & 本文用途 \\
-    \hline
+    \midrule
     IEEE-CIS Fraud Detection & 真实/半真实公开金融表格数据 & 真实集 & 二分类标签 & 方法有效性主验证；单卡、双卡真实数据口径基准 \\
     IBM AML / AMLSim & 高保真合成金融交易数据 & 1M & 异常交易标签 & 统一小规模桥接实验；连接真实集与扩展实验 \\
     IBM AML / AMLSim & 高保真合成金融交易数据 & 10M & 异常交易标签 & 单卡与双卡性能对比的共同起点 \\
     IBM AML / AMLSim & 高保真合成金融交易数据 & 50M & 异常交易标签 & 单卡中大规模性能验证；双卡扩展对比 \\
     IBM AML / AMLSim & 高保真合成金融交易数据 & 100M & 异常交易标签 & 双卡扩展与压力测试 \\
-    \hline
+    \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
@@ -215,16 +207,18 @@
   \centering
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.3cm}p{2.2cm}p{3.3cm}p{2.9cm}p{3.4cm}p{2.6cm}}
-    \hline
+    \toprule
     实验类型 & 数据规模 & 数据使用方式 & 划分方式 & 主要用途 & 说明 \\
-    \hline
+    \midrule
     方法有效性验证 & 真实集 & 训练集 / 验证集 / 测试集 & 固定随机种子划分 & 评估 PR-AUC、Recall@k & 用于真实/半真实数据上的检测效果验证 \\
     方法有效性桥接实验 & 1M & 训练集 / 验证集 / 测试集 & 与真实集一致的固定划分方式 & 评估 PR-AUC、Recall@k、Top-$k$ overlap & 连接真实集实验与合成扩展实验 \\
     单卡性能实验 & 10M、50M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、GPU Utilization & 强调端到端吞吐与稳定性 \\
     双卡扩展实验 & 10M、50M、100M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、CPU/GPU Utilization & 强调扩展收益与控制面负担 \\
-    \hline
+    \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 
@@ -238,23 +232,17 @@
 
 表~\ref{tab:metrics} 对全文使用的评价指标进行了统一定义，图~\ref{fig:metric-taxonomy} 给出了指标体系结构，表~\ref{tab:fairness-controls} 则明确了比较原则与控制变量。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 6-5 实验评价指标定义表。}
-  \item \textbf{图 6-3 指标体系结构图。}
-  \item \textbf{表 6-6 比较原则与实验控制变量表。}
-\end{itemize}
-
 \begin{table}[htbp]
   \caption{实验评价指标定义}
   \label{tab:metrics}
   \centering
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.0cm}p{2.7cm}p{4.0cm}p{3.3cm}p{5.0cm}}
-    \hline
+    \toprule
     指标类别 & 指标名称 & 定义 & 适用实验 & 说明 \\
-    \hline
+    \midrule
     异常检测效果 & PR-AUC & Precision--Recall 曲线下面积 & 真实集、1M & 金融异常检测样本极不平衡，PR-AUC 比 ROC-AUC 更敏感 \\
     异常检测效果 & Recall@$k$ & 前 $k$ 个高风险样本中的真实异常覆盖率 & 真实集、1M & 对应业务审查预算 \\
     候选检索质量 & Top-$k$ overlap & 近似排序结果与基线排序结果前 $k$ 项重合度 & 1M、10M、50M、100M & 说明候选召回没有明显破坏最终排序 \\
@@ -262,8 +250,9 @@
     系统性能 & p99 Latency & 99 分位端到端延迟 & 全部规模 & 反映尾延迟与系统稳定性 \\
     资源利用率 & GPU Utilization & GPU 平均利用率 & 单卡、双卡 & 验证 GPU 主导链路是否真正持续工作 \\
     资源利用率 & CPU Utilization & CPU 平均占用率 & 双卡重点、单卡辅助 & 验证 CPU 是否仍主要处于控制面 \\
-    \hline
+    \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
@@ -320,10 +309,11 @@
   \centering
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.2cm}p{4.0cm}p{4.6cm}p{3.5cm}}
-    \hline
+    \toprule
     比较维度 & 比较原则 & 主要控制变量 & 说明 \\
-    \hline
+    \midrule
     数据一致性 & 相同实验类型共享相同数据源与标签口径 & dataset、label definition & 防止不同数据口径导致指标不可比 \\
     划分一致性 & 有效性实验共享相同 train/val/test 划分 & split seed、train/val/test ratio & 保证 PR-AUC、Recall@k 可比 \\
     查询负载一致性 & 性能实验共享相同索引集与查询集 & index set、query set、query count & 保证 QPS 与 p99 Latency 可比 \\
@@ -333,8 +323,9 @@
     软件环境一致性 & 固定软件栈版本 & CUDA、PyTorch、FAISS-GPU、RAPIDS、NCCL & 保证复现实验结果 \\
     单卡/双卡口径一致性 & 相同规模下分别比较单卡与双卡 & gpu\_count、replica\_mode & 避免不同架构混比 \\
     统计一致性 & 统一重复轮次与汇总方式 & round、seed、mean & 每组 3 轮取均值 \\
-    \hline
+    \bottomrule
   \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \section{核心结果展示}
@@ -359,16 +350,6 @@
 
 为便于综合展示，表~\ref{tab:core-summary} 汇总了核心结果，图~\ref{fig:fusion-vs-baselines}、图~\ref{fig:single-gpu-before-after}、图~\ref{fig:multi-gpu-scaling} 分别从检测效果、吞吐能力和效果--性能折中三个视角对融合系统与基线方案进行比较，图~\ref{fig:scale-comparison} 汇总单卡优化与多 GPU 扩展的收益差异，而图~\ref{fig:scale-trend} 则展示跨规模趋势。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 6-7 核心结果汇总表。}
-  \item \textbf{图 6-4 融合系统与基线系统检测效果对比图。}
-  \item \textbf{图 6-5 融合系统与基线系统吞吐对比图。}
-  \item \textbf{图 6-6 融合系统效果与性能折中图。}
-  \item \textbf{图 6-7 单卡优化与多 GPU 扩展收益图。}
-  \item \textbf{图 6-8 不同规模下系统表现趋势图。}
-\end{itemize}
-
 \begin{table}[htbp]
   \caption{核心结果汇总}
   \label{tab:core-summary}
@@ -377,15 +358,15 @@
   \renewcommand{\arraystretch}{1.15}
   \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.5cm}p{2.2cm}p{3.0cm}p{5.2cm}p{2.0cm}}
-    \hline
+    \toprule
     结果主题 & 代表方案 & 核心指标 & 关键结果 & 支撑图表 \\
-    \hline
-    融合架构总体有效性 & 完整融合 & PR-AUC, QPS & 在 PR-AUC 仅略低于全量评分的前提下，QPS 相比全量评分显著提升，说明``候选召回 + 张量化评分''能够兼顾效果与吞吐 & 图 6-4--图 6-6 \\
-    单卡链路优化收益 & 单卡优化 & QPS, p99 Latency, CPU Utilization & GPU 主导执行链路显著压缩阶段边界开销，p99 延迟和 CPU 负载同步下降，端到端吞吐明显提升 & 图 4-14--图 4-16，图 6-7 \\
-    多 GPU replicated 扩展性 & 2/4 GPU replicated & QPS, CPU Utilization & GPU 数量增加时系统吞吐近似线性增长，CPU 利用率未同步放大，说明控制面/数据平面分离设计有效 & 图 5-15，图 6-7 \\
-    跨卡归并策略差异 & GPU merge vs.\ CPU aggregation & avg/p99 Latency & 当索引无法完整复制时，GPU 侧归并优于 CPU 聚合，说明``CPU 退出数据平面''在多 GPU 场景中仍然重要 & 图 5-16，表 5-2 \\
-    跨规模可行性 & 完整融合 & QPS, p99 Latency, PR-AUC & 从 1M 扩展到 100M 时，QPS 随规模增大而下降、p99 上升，但 PR-AUC 基本稳定，且融合系统持续优于基线 & 图 6-8 \\
-    \hline
+    \midrule
+    融合架构总体有效性 & 完整融合 & PR-AUC, QPS & 在 PR-AUC 仅略低于全量评分的前提下，QPS 相比全量评分显著提升，说明``候选召回 + 张量化评分''能够兼顾效果与吞吐 & 图~\ref{fig:fusion-vs-baselines}--图~\ref{fig:multi-gpu-scaling} \\
+    单卡链路优化收益 & 单卡优化 & QPS, p99 Latency, CPU Utilization & GPU 主导执行链路显著压缩阶段边界开销，p99 延迟和 CPU 负载同步下降，端到端吞吐明显提升 & 图~\ref{fig:single-stage-breakdown}--图~\ref{fig:single-gpu-overview}，图~\ref{fig:scale-comparison} \\
+    多 GPU replicated 扩展性 & 2/4 GPU replicated & QPS, CPU Utilization & GPU 数量增加时系统吞吐近似线性增长，CPU 利用率未同步放大，说明控制面/数据平面分离设计有效 & 图~\ref{fig:qps-vs-gpu}，图~\ref{fig:scale-comparison} \\
+    跨卡归并策略差异 & GPU merge vs.\ CPU aggregation & avg/p99 Latency & 当索引无法完整复制时，GPU 侧归并优于 CPU 聚合，说明``CPU 退出数据平面''在多 GPU 场景中仍然重要 & 图~\ref{fig:latency-quantiles}，表~\ref{tab:primary-vs-fallback} \\
+    跨规模可行性 & 完整融合 & QPS, p99 Latency, PR-AUC & 从 1M 扩展到 100M 时，QPS 随规模增大而下降、p99 上升，但 PR-AUC 基本稳定，且融合系统持续优于基线 & 图~\ref{fig:scale-trend} \\
+    \bottomrule
   \end{tabular}
   \end{adjustbox}
 \end{table}
@@ -437,20 +418,7 @@
 
 第四，若扩展曲线在更高 GPU 数量下开始放缓，而 I/O lane 控制实验显示共享存储路径成为主要限制，则说明``多 GPU 上限最终受制于存储路径组织''的判断成立\citep{gds_overview,gds_design_guide}。
 
-图~\ref{fig:discussion-logic} 总结了本节讨论所遵循的因果链条，表~\ref{tab:findings-evidence} 则把关键发现与其对应实验依据进行了对应整理。
-
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{图 6-9 结果讨论逻辑图。}
-  \item \textbf{表 6-8 核心结果与证据对应表。}
-\end{itemize}
-
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~6-9}
-  \caption{结果讨论逻辑图}
-  \label{fig:discussion-logic}
-\end{figure}
+表~\ref{tab:findings-evidence} 把关键发现与其对应实验依据进行了对应整理。
 
 \begin{table}[htbp]
   \caption{核心结果与证据对应}
@@ -460,16 +428,16 @@
   \renewcommand{\arraystretch}{1.15}
   \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{3.1cm}p{3.4cm}p{5.4cm}p{2.0cm}}
-    \hline
+    \toprule
     结论 & 直接证据（图/表） & 描述性说明 & 章节位置 \\
-    \hline
-    融合系统在接近最佳检测效果下显著提升吞吐 & 图 6-4，图 6-5，图 6-6，表 6-7 & 完整融合方案的 PR-AUC 接近全量评分，但 QPS 显著领先，证明两阶段融合路线在效果与性能之间取得更优平衡 & 6.4.1 \\
-    单卡优化的核心收益来自数据通路压缩而非单一算子加速 & 图 4-14，图 4-16，图 6-7 & 查询组织、候选打包和结果回传阶段开销下降最明显，说明 GPU 主导链路实质上减少了 CPU$\leftrightarrow$GPU 往返与同步等待 & 4.8，6.4.2 \\
-    多 GPU 主方案应优先采用 replicated 架构 & 表 5-2，图 5-15，图 6-7 & 在显存允许的前提下，replicated 方案扩展路径更简单、CPU 压力更低，吞吐随 GPU 数量增加保持稳定增长 & 5.3，5.8，6.4.2 \\
-    必须跨卡归并时 GPU 侧归并优于 CPU 聚合 & 图 5-16，表 5-2 & GPU merge 的平均延迟与 p99 延迟均低于 CPU aggregation，说明大规模中间结果不宜回流主机侧处理 & 5.5，5.8 \\
-    I/O 路径组织决定多 GPU 扩展上限 & 图 5-11，图 5-18，图 6-8 & 当多卡共享 PCIe/SSD 路径时，p99 延迟上升且 QPS 恶化，合理 lane 绑定是释放多 GPU 吞吐的必要条件 & 5.6，5.8，6.4.3 \\
-    out-of-core 融合方案在超大规模下仍具工程可行性 & 图 6-8，表 6-7 & 即便扩展到 100M 规模，系统仍保持稳定的 PR-AUC，并在吞吐和尾延迟上继续优于基线，说明外存候选召回结合 GPU 评分具有可行性 & 6.4.3 \\
-    \hline
+    \midrule
+    融合系统在接近最佳检测效果下显著提升吞吐 & 图~\ref{fig:fusion-vs-baselines}，图~\ref{fig:single-gpu-before-after}，图~\ref{fig:multi-gpu-scaling}，表~\ref{tab:core-summary} & 完整融合方案的 PR-AUC 接近全量评分，但 QPS 显著领先，证明两阶段融合路线在效果与性能之间取得更优平衡 & 6.4.1 \\
+    单卡优化的核心收益来自数据通路压缩而非单一算子加速 & 图~\ref{fig:single-stage-breakdown}，图~\ref{fig:single-gpu-overview}，图~\ref{fig:scale-comparison} & 查询组织、候选打包和结果回传阶段开销下降最明显，说明 GPU 主导链路实质上减少了 CPU$\leftrightarrow$GPU 往返与同步等待 & 4.8，6.4.2 \\
+    多 GPU 主方案应优先采用 replicated 架构 & 表~\ref{tab:primary-vs-fallback}，图~\ref{fig:qps-vs-gpu}，图~\ref{fig:scale-comparison} & 在显存允许的前提下，replicated 方案扩展路径更简单、CPU 压力更低，吞吐随 GPU 数量增加保持稳定增长 & 5.3，5.8，6.4.2 \\
+    必须跨卡归并时 GPU 侧归并优于 CPU 聚合 & 图~\ref{fig:latency-quantiles}，表~\ref{tab:primary-vs-fallback} & GPU merge 的平均延迟与 p99 延迟均低于 CPU aggregation，说明大规模中间结果不宜回流主机侧处理 & 5.5，5.8 \\
+    I/O 路径组织决定多 GPU 扩展上限 & 图~\ref{fig:topology}，图~\ref{fig:io-lane-impact}，图~\ref{fig:scale-trend} & 当多卡共享 PCIe/SSD 路径时，p99 延迟上升且 QPS 恶化，合理 lane 绑定是释放多 GPU 吞吐的必要条件 & 5.6，5.8，6.4.3 \\
+    out-of-core 融合方案在超大规模下仍具工程可行性 & 图~\ref{fig:scale-trend}，表~\ref{tab:core-summary} & 即便扩展到 100M 规模，系统仍保持稳定的 PR-AUC，并在吞吐和尾延迟上继续优于基线，说明外存候选召回结合 GPU 评分具有可行性 & 6.4.3 \\
+    \bottomrule
   \end{tabular}
   \end{adjustbox}
 \end{table}
@@ -480,13 +448,7 @@
 
 首先，真实超大规模金融数据公开可得性有限，10M 与 100M 规模性能实验主要依赖 IBM AML / AMLSim 等合成数据\citep{ibm_aml_data,ibm_amlsim}。其次，replicated 架构受显存容量限制，索引规模进一步增大时必须转向 sharded 路径并承担更高通信与归并复杂度。第三，out-of-core 路径与拓扑感知 I/O 优化对部署条件依赖较强，其收益与 GPU--SSD--PCIe--NUMA 拓扑、驱动与 GDS 支持高度相关\citep{gds_overview,gds_design_guide}。第四，本文尚未延伸到多机分布式环境。
 
-表~\ref{tab:limitations} 汇总了主要局限性及其影响范围，图~\ref{fig:applicability-boundary} 则用边界示意图说明了本文结论更适用的场景范围。
-
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 6-9 研究局限性与影响范围表。}
-  \item \textbf{图 6-10 本文结论适用边界示意图。}
-\end{itemize}
+表~\ref{tab:limitations} 汇总了主要局限性及其影响范围。
 
 \begin{table}[htbp]
   \caption{研究局限性与影响范围}
@@ -496,25 +458,18 @@
   \renewcommand{\arraystretch}{1.15}
   \begin{adjustbox}{max width=\linewidth}
   \begin{tabular}{p{2.2cm}p{2.5cm}p{4.6cm}p{2.6cm}p{2.9cm}}
-    \hline
+    \toprule
     局限性 & 影响因素 & 原因分析 & 影响范围 & 应对策略 \\
-    \hline
+    \midrule
     replicated 扩展受显存限制 & 索引规模、候选预算、GPU 显存容量 & replicated 方案需要在每张 GPU 上复制索引与候选缓存，规模继续增大时显存先成为硬约束 & 限制可直接扩展的 GPU 数量与单卡可容纳索引规模 & 转向 sharded + GPU 归并，配合压缩索引或分层召回 \\
     I/O 路径仍可能成为大规模吞吐瓶颈 & SSD 带宽、PCIe lane、队列深度 & out-of-core 场景下 SSD 访问与 GPU 计算虽可重叠，但共享路径冲突仍会拉高排队时间与 p99 & 对 50M/100M 规模及多卡并发场景影响更明显 & 采用拓扑感知 I/O 绑定、独立 lane 准入控制与队列参数调优 \\
     部署收益依赖硬件拓扑条件 & GPU--SSD--PCIe--NUMA 布局、驱动/GDS 支持 & 本文优化收益建立在较好的本地 NVMe、PCIe Gen4 和可控 NUMA 路径基础上，不同部署环境下收益会波动 & 影响方案跨平台复现的一致性 & 部署前进行拓扑画像与基准测试，优先在路径清晰的节点上落地 \\
     超大规模真实金融数据验证仍有限 & 真实数据可得性、合规约束 & 10M/50M/100M 规模实验主要依赖高保真合成数据，尚不能完全替代真实业务负载 & 影响结论向生产金融场景外推时的置信度 & 与机构数据平台联合验证，并补充真实在线负载回放实验 \\
     尚未覆盖多机分布式扩展 & 网络带宽、跨机通信、分布式索引管理 & 本文重点解决单机多 GPU 路径，尚未进一步讨论跨机查询分发与层次化归并 & 限制结论直接外推到更大规模集群部署 & 后续引入 RDMA/NVLink-aware 通信与分布式索引分层调度 \\
-    \hline
+    \bottomrule
   \end{tabular}
   \end{adjustbox}
 \end{table}
-
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~6-9}
-  \caption{本文结论适用边界示意图}
-  \label{fig:applicability-boundary}
-\end{figure}
 
 \section{本章小结}
 

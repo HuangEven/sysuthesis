@@ -44,6 +44,8 @@
 
 % 跨页表格
 \usepackage{longtable}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
 
 % 绘图（黑白结构图等）
 \usepackage{tikz}
@@ -105,6 +107,19 @@
       \centering #2%
     }%
   }%
+}
+
+% 统一表格风格与版心约束
+\captionsetup[table]{font=small, skip=6pt}
+\AtBeginEnvironment{table}{%
+  \small
+  \setlength{\tabcolsep}{3.5pt}%
+  \renewcommand{\arraystretch}{1.18}%
+}
+\AtBeginEnvironment{longtable}{%
+  \small
+  \setlength{\tabcolsep}{3.5pt}%
+  \renewcommand{\arraystretch}{1.18}%
 }
 
 % hyperref 宏包在最后调用
