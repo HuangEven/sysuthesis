@@ -56,12 +56,12 @@
 
 第四项原则是\textbf{当必须跨卡归并时，归并逻辑应下沉到 GPU 侧，并通过 NCCL 等设备间通信机制完成}。NCCL 文档指出其通信操作会异步入队到 CUDA stream 上执行，但也警告在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream 会形成全局同步点\citep{nccl_stream_semantics}。因此，本文把 GPU 侧归并视为 replicated 主方案失效时的兜底方案：仅当索引容量或业务约束迫使系统进入 sharded 模式时，才引入 GPU 侧合并与必要的 NCCL 通信组织。
 
-图~\ref{fig:multi-gpu-principles} 汇总了多 GPU 方案的四项设计原则，表~\ref{tab:primary-vs-fallback} 对主方案与兜底方案的适用边界进行了归纳，图~\ref{fig:query-parallel-vs-cross} 则直观比较了两类并行路径。
+图~\ref{fig:multi-gpu-principles} 汇总了多 GPU 方案的四项设计原则，表~\ref{tab:primary-vs-fallback} 对 replicated 主方案、sharded+GPU 归并兜底方案以及 CPU 聚合对比路径的适用条件进行了归纳，图~\ref{fig:query-parallel-vs-cross} 则直观比较了两类并行路径。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-3 多 GPU 扩展策略设计原则图。} 概括四项设计原则及其相互关系。
-  \item \textbf{表 5-2 主方案与兜底方案适用条件表。} 列出数据并行+索引复制方案与索引分片+GPU 侧归并方案的适用边界。
+  \item \textbf{表 5-2 多 GPU 扩展方案适用条件表。} 列出 replicated、sharded+GPU 归并以及 CPU 聚合对比路径的适用边界。
   \item \textbf{图 5-4 查询级并行与单查询跨卡并行对比图。} 展示两种并行思路在结果归并、CPU 参与度和尾延迟上的差异。
 \end{itemize}
 
@@ -73,10 +73,38 @@
 \end{figure}
 
 \begin{table}[htbp]
-  \caption{主方案与兜底方案适用条件}
+  \caption{多 GPU 扩展方案适用条件}
   \label{tab:primary-vs-fallback}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~5-2}
+  \small
+  \begin{adjustbox}{max width=\linewidth}
+    \begin{tabular}{p{1.9cm}p{2.8cm}p{4.0cm}p{3.2cm}p{3.0cm}p{1.8cm}}
+      \toprule
+      方案 & 核心思路 & 适用条件 & 优势 & 代价 & 定位 \\
+      \midrule
+      replicated &
+      完整索引复制到每张 GPU，按查询级或微批级并行分发任务，每卡独立完成候选召回、异常评分与局部结果输出闭环 &
+      单卡可容纳完整索引副本；系统目标以高吞吐和低尾延迟为主；允许用显存换取调度简单性和扩展稳定性 &
+      数据平面最清晰；CPU 仅保留控制面职责；几乎不需要跨卡归并；与单卡优化链路复用度最高 &
+      显存占用高；索引构建与更新需要维护多份副本；当索引继续增大时可扩展性受显存约束 &
+      主方案 \\
+      \midrule
+      sharded+GPU 归并 &
+      索引按卡分片，各卡先完成局部召回或局部评分，再通过 NCCL 等通信机制在 GPU 侧完成归并和最终结果合并 &
+      完整索引无法复制到单卡；业务必须覆盖更大索引容量；可以接受额外的设备间通信与 GPU 侧归并复杂度 &
+      支持更大索引规模；CPU 不再回收大规模候选集合；相较 CPU 聚合路径尾延迟更可控 &
+      归并逻辑更复杂；通信开销与 stream 协调成本更高；性能更容易受到拓扑与 I/O 路径限制 &
+      兜底方案 \\
+      \midrule
+      CPU 聚合 &
+      各 GPU 仅输出局部结果，统一回传 CPU 进行排序、合并与最终输出，CPU 重新承担跨卡聚合职责 &
+      主要用于原型验证、调试、小规模实验或需要显式检查中间结果的离线分析场景 &
+      实现路径最直接；中间结果易于观察；便于快速构造对比基线 &
+      CPU 重新进入数据平面；D2H/H2D 往返明显增加；高并发下 p99 延迟与吞吐表现最差 &
+      对比基线 \\
+      \bottomrule
+    \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
@@ -138,12 +166,12 @@
 
 最终结果汇总方面，CPU 仅接收每张 GPU 已完成的最终小规模结果，如异常分数、Top-$k$ 排序结果和必要日志元信息，而不再接收大规模局部候选集合或评分中间张量。
 
-图~\ref{fig:control-plane} 展示了 CPU 控制面的调度与回收流程，表~\ref{tab:control-vs-data-plane} 说明了控制面与数据平面的职责边界，图~\ref{fig:bounded-batching} 则刻画了 bounded batching 与动态负载均衡的工作方式。
+图~\ref{fig:control-plane} 展示了 CPU 控制面的调度与回收流程，表~\ref{tab:control-vs-data-plane} 汇总了控制面、数据平面、通信与 I/O 路径中的职责划分及关键参数，图~\ref{fig:bounded-batching} 则刻画了 bounded batching 与动态负载均衡的工作方式。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{图 5-7 CPU 控制面调度流程图。} 展示请求队列、批次形成、GPU 负载监控、请求分发和结果回收路径。
-  \item \textbf{表 5-4 控制面职责与数据平面职责划分表。} 明确哪些工作由 CPU 完成，哪些工作保留在 GPU。
+  \item \textbf{表 5-4 控制面/数据面职责与关键参数表。} 汇总控制面、数据平面、通信与 I/O 相关组件的职责和关键参数。
   \item \textbf{图 5-8 bounded batching 与动态调度机制示意图。} 展示请求如何被聚合为微批并被动态分配到不同 GPU。
 \end{itemize}
 
@@ -155,10 +183,53 @@
 \end{figure}
 
 \begin{table}[htbp]
-  \caption{控制面职责与数据平面职责划分}
+  \caption{控制面/数据面职责与关键参数}
   \label{tab:control-vs-data-plane}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~5-4}
+  \small
+  \begin{adjustbox}{max width=\linewidth}
+    \begin{tabular}{p{1.8cm}p{2.8cm}p{3.8cm}p{3.4cm}p{4.2cm}}
+      \toprule
+      类别 & 组件 & 职责 & 关键参数 & 备注 \\
+      \midrule
+      控制面 &
+      请求队列与 batching 调度器 &
+      统一接收请求、执行 bounded batching、形成微批并决定批次进入时机 &
+      \texttt{batch\_size}、\texttt{micro\_batch\_timeout\_ms}、\texttt{max\_inflight\_batches} &
+      直接决定吞吐与平均延迟的折中；CPU 只负责批次组织，不接收大规模候选集合 \\
+      \midrule
+      控制面 &
+      GPU 负载均衡器 &
+      根据 GPU 空闲度、队列深度和显存水位把微批动态分配到不同设备 &
+      \texttt{queue\_depth\_threshold}、\texttt{gpu\_mem\_watermark\_pct}、\texttt{dispatch\_window} &
+      优先保持各卡负载平衡并控制尾延迟；适用于 replicated 主路径 \\
+      \midrule
+      数据平面 &
+      FlashANNS / FAISS-GPU 候选召回后端 &
+      在设备侧完成向量检索、候选筛选和局部 top-$k$ 组织 &
+      \texttt{nprobe}、\texttt{candidate\_k}、\texttt{search\_stream\_count} &
+      每张 GPU 独立执行本地召回；与单卡阶段的 GPU 常驻链路保持一致 \\
+      \midrule
+      数据平面 &
+      PyTOD 评分执行器 &
+      对候选集合执行张量化异常评分、局部排序和最终分数输出 &
+      \texttt{score\_batch\_size}、\texttt{k}、\texttt{score\_stream\_priority} &
+      分数、排序结果和必要日志元信息留在设备侧直至最终输出 \\
+      \midrule
+      通信 &
+      NCCL 归并与通信流 &
+      在 sharded 兜底路径中完成 all-gather / reduce / merge 等设备间结果合并 &
+      \texttt{nccl\_op}、\texttt{merge\_chunk\_size}、\texttt{comm\_stream\_priority} &
+      仅在 replicated 失效时启用；需避免在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream \\
+      \midrule
+      I/O &
+      I/O 队列与 lane 准入控制器 &
+      管理 SSD 读队列、GPU--SSD lane 绑定和 in-flight I/O 数量，抑制共享路径拥塞 &
+      \texttt{io\_queue\_depth}、\texttt{max\_inflight\_io}、\texttt{lane\_tokens\_per\_gpu} &
+      与拓扑感知绑定策略联动；参数过大时会拉高 p99，过小则会限制吞吐 \\
+      \bottomrule
+    \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
@@ -296,19 +367,36 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
   \caption{多 GPU 实验设置}
   \label{tab:multi-gpu-exp-setup}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~5-8}
+  \scriptsize
+  \begin{adjustbox}{max width=\linewidth}
+    \begin{tabular}{p{0.8cm}p{2.6cm}p{1.0cm}p{1.9cm}p{1.0cm}p{1.0cm}p{0.7cm}p{2.2cm}p{1.8cm}p{2.7cm}}
+      \toprule
+      GPU数 & 方案 & 数据规模 & 索引组织 & 批大小 & 候选数 & $k$ & 归并路径 & I/O 绑定 & 备注 \\
+      \midrule
+      1 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 单卡吞吐扩展基线 \\
+      2 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 双卡 replicated 扩展基线 \\
+      4 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 四卡 replicated 扩展基线 \\
+      4 & Local scoring + GPU merge & 100M & Sharded index & 3072 & 128 & 50 & NCCL all-gather + GPU merge & Topology-aware & 显存受限时的 GPU 侧归并兜底方案 \\
+      4 & Local scoring + CPU aggregation & 100M & Sharded index & 3072 & 128 & 50 & CPU aggregation & Topology-aware & CPU 聚合对比基线 \\
+      2 & Topology-aware binding & 100M & Full replica & 4096 & 128 & 50 & None & Topology-aware & I/O lane 绑定对比实验 \\
+      4 & Topology-aware binding & 100M & Full replica & 4096 & 128 & 50 & None & Topology-aware & I/O lane 绑定对比实验 \\
+      2 & Shared-path conflict & 100M & Full replica & 4096 & 128 & 50 & None & Shared PCIe/SSD path & 共享路径冲突对比基线 \\
+      4 & Shared-path conflict & 100M & Full replica & 4096 & 128 & 50 & None & Shared PCIe/SSD path & 共享路径冲突对比基线 \\
+      \bottomrule
+    \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~5-15}
+  \includegraphics[width=0.86\linewidth]{plot_assets/ch05_gpu_scaling_qps/fig5_15_qps_vs_gpu.png}
   \caption{QPS 随 GPU 数量变化}
   \label{fig:qps-vs-gpu}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~5-16}
+  \includegraphics[width=0.84\linewidth]{plot_assets/ch05_latency_merge_compare/fig5_16_latency_merge_compare.png}
   \caption{平均延迟与 p99 延迟变化}
   \label{fig:latency-quantiles}
 \end{figure}
@@ -322,7 +410,7 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~5-18}
+  \includegraphics[width=\linewidth]{plot_assets/ch05_io_lane_impact/fig5_18_io_lane_impact.png}
   \caption{I/O lane 配置对扩展性的影响}
   \label{fig:io-lane-impact}
 \end{figure}
@@ -331,7 +419,24 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
   \caption{多 GPU 扩展结果汇总}
   \label{tab:multi-gpu-summary}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~5-9}
+  \scriptsize
+  \begin{adjustbox}{max width=\linewidth}
+    \begin{tabular}{p{0.8cm}p{2.6cm}p{1.0cm}p{1.6cm}p{1.8cm}p{1.8cm}p{1.6cm}p{1.6cm}}
+      \toprule
+      GPU数 & 方案 & 数据规模 & QPS & avg\_latency\_ms & p99\_latency\_ms & CPU利用率(\%) & GPU利用率(\%) \\
+      \midrule
+      1 & Replicated & 10M & 12640.00 & 10.80 & 16.20 & 34.00 & 69.00 \\
+      2 & Replicated & 10M & 24760.00 & 9.10 & 14.60 & 30.50 & 75.50 \\
+      4 & Replicated & 10M & 47620.00 & 8.40 & 12.90 & 26.50 & 82.00 \\
+      4 & Local scoring + GPU merge & 100M & 40180.00 & 11.60 & 19.40 & 32.00 & 78.00 \\
+      4 & Local scoring + CPU aggregation & 100M & 28940.00 & 15.80 & 28.60 & 49.00 & 64.50 \\
+      2 & Topology-aware binding & 100M & 24780.00 & 11.40 & 18.40 & 31.00 & 74.00 \\
+      4 & Topology-aware binding & 100M & 47560.00 & 13.20 & 22.10 & 29.00 & 80.00 \\
+      2 & Shared-path conflict & 100M & 21920.00 & 14.80 & 24.80 & 36.00 & 67.50 \\
+      4 & Shared-path conflict & 100M & 33140.00 & 24.20 & 41.60 & 43.00 & 58.00 \\
+      \bottomrule
+    \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \section{本章小结}

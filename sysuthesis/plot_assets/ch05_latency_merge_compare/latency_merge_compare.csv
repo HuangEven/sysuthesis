@@ -1,0 +1,4 @@
+scheme,scheme_desc,avg_latency_ms,p99_latency_ms
+Scheme 1,Replicated,8.40,12.90
+Scheme 2,Local scoring + CPU aggregation,15.80,28.60
+Scheme 3,Local scoring + GPU merge,11.60,19.40
