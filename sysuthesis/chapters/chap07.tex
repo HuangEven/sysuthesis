@@ -23,28 +23,6 @@
   \item 多 GPU 场景下更适合采用数据并行与索引复制作为吞吐优先主方案，只有在索引无法复制时才进入 GPU 侧跨卡归并与设备间通信路径；同时，多 GPU 上限与存储拓扑和 I/O 路径组织密切相关，因此拓扑感知 I/O 控制应被视为系统设计的重要组成部分。
 \end{enumerate}
 
-表~\ref{tab:overall-summary} 对全文主要工作与章节贡献进行了对应汇总，图~\ref{fig:overall-roadmap} 则从技术路线和结论闭环两个角度概括了本文的整体逻辑。
-
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 7-1 全文主要工作与对应章节总结表。} 将全文的主要研究工作、核心章节和实验验证结果进行一一对应。
-  \item \textbf{图 7-1 全文技术路线与结论闭环图。} 展示从问题提出、融合系统构建、单卡优化、多 GPU 扩展到综合实验验证的完整闭环。
-\end{itemize}
-
-\begin{table}[htbp]
-  \caption{全文主要工作与对应章节总结}
-  \label{tab:overall-summary}
-  \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~7-1}
-\end{table}
-
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~7-1}
-  \caption{全文技术路线与结论闭环图}
-  \label{fig:overall-roadmap}
-\end{figure}
-
 \section{未来工作展望}
 
 尽管本文围绕金融大规模异常检测系统的实现与优化进行了较为系统的研究，并在 PyTOD--FlashANNS 融合架构、单卡数据路径压缩和多 GPU 扩展方面取得了一定成果，但从更长期的工程部署与学术研究角度看，仍有若干值得进一步深入的方向。
