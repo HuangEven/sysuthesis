@@ -12,21 +12,15 @@
 \begin{equation}
   C_i = \mathcal{R}(v_i, \mathcal{I}), \qquad s_i = \mathcal{F}(v_i, C_i),
 \end{equation}
-其中 $\mathcal{R}$ 表示候选召回过程，$\mathcal{I}$ 表示候选索引，$\mathcal{F}$ 表示异常评分函数。该二阶段处理结构使候选召回质量与异常评分质量共同决定最终检测效果，也使系统能够在大规模场景下获得更高吞吐率与更低资源开销\citep{zhao2022tod,xiao2025flashanns}。
+其中 $\mathcal{R}$ 表示候选召回过程，$\mathcal{I}$ 表示候选索引，$\mathcal{F}$ 表示异常评分函数。这样的两阶段处理结构使候选召回质量与异常评分质量共同决定最终检测效果，也使系统能够在大规模场景下获得更高吞吐率与更低资源开销\citep{zhao2022tod,xiao2025flashanns}。
 
-从输出形式上看，系统可产生三类结果：其一是每个样本的异常分数，用于后续阈值判断或人工复核排序；其二是 Top-$k$ 风险样本集合，用于构造重点审查名单；其三是与异常结果相关的候选邻域、关键特征统计及日志信息，用于系统追踪和后续解释分析。对于金融风控场景而言，这三类结果分别对应在线筛查、风险排序和审计追踪三种实际需求。因此，本文后续设计的 PyTOD--FlashANNS 融合系统，不仅追求更高的候选召回吞吐和异常评分效率，也强调输出结果能够支持实验可重复性和工程可观察性。
+从输出形式上看，系统可产生三类结果：其一是每个样本的异常分数，用于后续阈值判断或人工复核排序；其二是 Top-$k$ 风险样本集合，用于构造重点审查名单；其三是与异常结果相关的候选邻域、关键特征统计及日志信息，用于系统追踪和后续解释分析。在金融风控场景中，这三类结果分别对应在线筛查、风险排序和审计追踪三种实际需求。因此，本文设计的 PyTOD--FlashANNS 融合系统，不仅追求更高的候选召回吞吐和异常评分效率，也强调输出结果能够支持实验可重复性和工程可观察性。
 
 图~\ref{fig:fin-ad-model} 对这一统一任务建模过程进行了整体展示，表~\ref{tab:task-io-def} 则进一步归纳了研究对象、输入表示与输出形式之间的对应关系。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{图 3-1 金融异常检测任务建模图。} 展示交易数据、账户行为、图节点特征等不同输入形式如何统一映射为向量表示，并进入候选召回与异常评分两阶段流程。
-  \item \textbf{表 3-1 研究对象、输入形式与输出形式定义表。} 列出交易级异常、账户级异常、图节点级异常三类对象，以及对应的输入字段、向量表示形式和输出结果类型。
-\end{itemize}
-
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~3-1}
+  \includegraphics[width=\linewidth]{figures/fig3-1_financial_anomaly_task_model.png}
   \caption{金融异常检测任务建模图}
   \label{fig:fin-ad-model}
 \end{figure}
@@ -35,48 +29,78 @@
   \caption{研究对象、输入形式与输出形式定义}
   \label{tab:task-io-def}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-1}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{p{2.2cm}p{3.9cm}p{4.3cm}p{3.6cm}p{2.6cm}}
+    \hline
+    研究对象 & 原始输入形式 & 统一向量表示形式 & 主要输出形式 & 典型业务场景\\
+    \hline
+    交易级异常 & 单笔交易记录，包含金额、时间、商户、设备、地域、支付渠道等字段 & 对连续型、类别型与时间上下文特征进行规范化、编码与拼接，形成交易级向量 ($v_i\in\mathbb{R}^d$) & 异常分数 ($s_i$)、Top-$k$ 风险交易集合、候选邻域及日志信息 & 实时交易风控、支付反欺诈\\
+    账户级异常 & 账户在时间窗口内的行为摘要，包括交易频次、金额分布、平均间隔、夜间交易比例、跨地域切换次数等 & 将账户静态属性与时间窗行为统计特征拼接，形成账户级行为向量 ($v_i\in\mathbb{R}^d$) & 异常分数、重点审查账户清单、行为统计解释信息 & 账户审计、反洗钱筛查、账户风险监测\\
+    图节点级异常 & 图节点属性及其邻域边关系信息，包括节点属性、边方向、金额统计、时间分布等 & 对节点属性规范化编码，并对邻域关系做聚合统计，形成节点级向量 ($v_i\in\mathbb{R}^d$) & 异常分数、Top-$k$ 风险节点、邻域候选及追踪日志 & 团伙欺诈识别、关系网络异常排查\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
+
+\FloatBarrier
 
 \section{实验数据集选取与构建}
 
-本文的实验数据安排遵循``真实/半真实数据用于有效性验证，合成扩展数据用于系统吞吐与扩展实验''的基本原则。其原因在于：一方面，公开可获取的真实金融数据规模通常有限，且多经过脱敏、压缩或竞赛裁剪，适合验证模型与系统在现实场景中的可用性，但不足以单独支撑超大规模系统实验；另一方面，大规模性能验证需要控制数据规模、异常比例和字段分布的一致性，因此需要借助高保真合成数据集构建 10M 与 100M 规模实验环境\citep{ibm_aml_data,ibm_amlsim}。基于这一考虑，本文将实验数据集分为两类：第一类为 1M 规模的真实或半真实公开数据集，用于验证候选召回与异常评分在现实数据上的有效性；第二类为 10M 与 100M 规模的高保真合成数据集，用于验证系统在高吞吐与多 GPU 扩展场景下的性能表现。
+本文的实验数据安排遵循``真实/半真实数据用于有效性验证，合成扩展数据用于系统吞吐与扩展实验''的基本原则。这样安排的原因在于：一方面，公开可获取的真实金融数据规模通常有限，且多经过脱敏、压缩或竞赛裁剪，适合验证模型与系统在现实场景中的可用性，但不足以单独支撑超大规模系统实验；另一方面，大规模性能验证需要控制数据规模、异常比例和字段分布的一致性，因此需要借助高保真合成数据集构建 10M 与 50M 规模实验环境\citep{ibm_aml_data,ibm_amlsim}。基于这一考虑，本文将实验数据集分为两类：第一类为 1M 规模的真实或半真实公开数据集，用于验证候选召回与异常评分在现实数据上的有效性；第二类为 10M 与 50M 规模的高保真合成数据集，用于验证系统在高吞吐与多 GPU 扩展场景下的性能表现。
 
-在 1M 规模的有效性验证中，本文主要使用三类真实或半真实公开数据。第一类为 \textbf{IEEE-CIS Fraud Detection} 数据集，该数据集包含交易表与身份表两部分，特征维度高、缺失值复杂，较接近现实支付风控场景，可用于检验系统在高维结构化金融数据上的向量化表示与候选召回效果\citep{ieee_cis_fraud}。第二类为 \textbf{Credit Card Fraud Detection} 数据集，该数据集虽规模相对较小，但具有经典性和广泛使用基础，可作为基准异常检测数据集用于对照验证\citep{dalpozzolo2015creditcard}。第三类为 \textbf{DGraphFin} 金融图数据集，其包含大规模节点与边关系以及金融行为特征，适用于验证系统在图金融数据经过向量化映射后的可用性\citep{dgraphfin_paper,dgraphfin_baseline}。在具体实验组织时，本文将控制单次实验输入规模在约 1M 量级，以保证实验设计的一致性和可比较性。
+在 1M 规模的有效性验证中，本文主要使用三类真实或半真实公开数据。第一类为 \textbf{IEEE-CIS Fraud Detection} 数据集，该数据集包含交易表与身份表两部分，特征维度高、缺失值复杂，较接近现实支付风控场景，可用于检验系统在高维结构化金融数据上的向量化表示与候选召回效果\citep{ieee_cis_fraud}。第二类为 \textbf{Credit Card Fraud Detection} 数据集，该数据集虽规模相对较小，但具有经典性和广泛使用基础，可作为基准异常检测数据集用于对照验证\citep{creditcardfraud_kaggle,dalpozzolo2015creditcard}。第三类为 \textbf{DGraphFin} 金融图数据集，其包含大规模节点与边关系以及金融行为特征，适用于验证系统在图金融数据经过向量化映射后的可用性\citep{dgraphfin_paper,dgraphfin_site,dgraphfin_baseline}。在具体实验组织时，本文将控制单次实验输入规模在约 1M 量级，以保证实验设计的一致性和可比较性。
 
-在 10M 与 100M 规模的性能验证中，本文采用基于 \textbf{IBM AML / AMLSim} 体系构建的高保真合成金融交易数据。IBM AML-Data 明确以洗钱与异常金融交易为目标，提供带标签的合成金融交易数据集；AMLSim 则能够根据预定义行为规则、账户关系和交易模式生成大规模、可控分布的银行交易数据\citep{ibm_aml_data,ibm_amlsim}。本文利用该类数据的优势，在保持交易字段、行为模式、异常比例和实体关系结构相对稳定的前提下，将数据规模扩展至 10M 和 100M，以支撑候选召回吞吐、多 GPU 扩展和 I/O 路径压力测试。选择 IBM AML / AMLSim 而非简单随机生成数据的原因在于：其数据具有更强的金融语境和结构一致性，能够更真实地反映账户、交易和异常模式之间的关系，从而使系统性能结论更具工程意义\citep{ibm_aml_data,ibm_amlsim}。
+在 10M 与 50M 规模的性能验证中，本文采用基于 \textbf{IBM AML / AMLSim} 体系构建的高保真合成金融交易数据。IBM AML-Data 明确以洗钱与异常金融交易为目标，提供带标签的合成金融交易数据集；AMLSim 则能够根据预定义行为规则、账户关系和交易模式生成大规模、可控分布的银行交易数据\citep{ibm_aml_data,ibm_amlsim}。本文利用该类数据的优势，在保持交易字段、行为模式、异常比例和实体关系结构相对稳定的前提下，将数据规模扩展至 10M 和 50M，以支撑候选召回吞吐、多 GPU 扩展和 I/O 路径压力测试。选择 IBM AML / AMLSim 而非简单随机生成数据的原因在于：其数据具有更强的金融语境和结构一致性，能够更真实地反映账户、交易和异常模式之间的关系，从而使系统性能结论更具工程意义\citep{ibm_aml_data,ibm_amlsim}。
 
 除主实验数据外，本文还将利用数据集间的差异性补充分析系统的适用范围。具体而言，IEEE-CIS 与 Credit Card Fraud Detection 更适合检验结构化表格数据下的向量化表示与评分链路；DGraphFin 更适合验证系统在图金融数据上的扩展潜力；IBM AML / AMLSim 则主要用于高规模、高并发和多 GPU 扩展实验。通过这种``真实/半真实 + 合成扩展''的组合，本文在保证现实意义的同时，也为大规模并行系统验证提供了稳定实验基础。
 
-为便于说明不同数据集在全文中的角色分工，表~\ref{tab:datasets-overall} 汇总了数据来源与基本属性，图~\ref{fig:dataset-scale-plan} 给出了规模层级安排，表~\ref{tab:dataset-roles} 对各数据集所支撑的实验任务进行了对应说明。
-
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 3-2 实验数据集总体信息表。} 表中列出各数据集的来源、类型、样本规模、特征维度、标签形式以及在本文中的用途。
-  \item \textbf{图 3-2 数据集规模层级安排图。} 展示 1M、10M、100M 三个规模层级与对应数据集来源之间的关系，用于说明实验设计的逻辑。
-  \item \textbf{表 3-3 数据集用途分工表。} 列出各数据集分别服务于有效性验证、单卡性能验证、多 GPU 扩展验证、图场景补充验证等任务。
-\end{itemize}
+为便于说明不同数据集在全文中的角色分工，表~\ref{tab:datasets-overall} 汇总了数据来源与基本属性，表~\ref{tab:dataset-roles} 对各数据集所支撑的实验任务进行了对应说明。
 
 \begin{table}[htbp]
   \caption{实验数据集总体信息}
   \label{tab:datasets-overall}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-2}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{p{2.8cm}p{2.6cm}p{4.0cm}p{2.3cm}p{2.6cm}p{4.1cm}}
+    \hline
+    数据集 & 来源类型 & 数据形态 & 实验规模口径 & 标签形式 & 在本文中的用途\\
+    \hline
+    IEEE-CIS Fraud Detection & 真实/半真实公开金融数据 & 结构化交易表 + 身份表，高维表格特征、缺失值较复杂 & 约 1M 级输入口径 & 二分类欺诈标签 & 真实场景下的主有效性验证，检验系统在高维金融表格数据上的可用性\\
+    Credit Card Fraud Detection & 真实/半真实公开金融数据 & 结构化信用卡交易表格，经典欺诈检测基准 & 按统一实验口径组织到约 1M 级输入 & 二分类欺诈标签 & 作为经典基准数据集，用于对照验证两阶段框架的有效性\\
+    DGraphFin & 真实/半真实公开金融图数据 & 图节点、边关系及金融行为特征 & 约 1M 级输入口径 & 节点/行为异常标签 & 验证图金融数据在向量化映射后进入统一候选召回---异常评分链路的可行性\\
+    IBM AML / AMLSim（10M） & 高保真合成金融交易数据 & 合成账户---交易网络与表格化交易记录 & 10M & 异常交易/可疑行为标签 & 单卡高吞吐性能验证与系统扩展实验起始规模\\
+    IBM AML / AMLSim（50M） & 高保真合成金融交易数据 & 合成账户---交易网络与表格化交易记录 & 50M & 异常交易/可疑行为标签 & 大规模系统吞吐验证、多 GPU 扩展与 I/O 压力测试\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
-
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~3-2}
-  \caption{数据集规模层级安排图}
-  \label{fig:dataset-scale-plan}
-\end{figure}
 
 \begin{table}[htbp]
   \caption{数据集用途分工}
   \label{tab:dataset-roles}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-3}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \makebox[\linewidth][c]{%
+  \begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}p{3.2cm} c c c >{\raggedright\arraybackslash}p{3.2cm}}
+    \hline
+    数据集 & 数据类型 & 有效性验证 & 单卡性能 & 多 GPU 扩展 & 主要角色\\
+    \hline
+    IEEE-CIS Fraud Detection & 真实/半真实表格数据 & 主 & 否 & 否 & 真实表格主验证\\
+    Credit Card Fraud Detection & 真实/半真实表格数据 & 辅 & 否 & 否 & 经典基准对照\\
+    DGraphFin & 真实/半真实图数据 & 辅 & 否 & 否 & 图场景补充验证\\
+    IBM AML / AMLSim（10M） & 合成交易数据 & 否 & 主 & 辅 & 单卡性能起始规模\\
+    IBM AML / AMLSim（50M） & 合成交易数据 & 否 & 辅 & 主 & 多 GPU 扩展主规模\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
+
+\FloatBarrier
 
 \section{数据预处理与特征构造}
 
@@ -88,37 +112,38 @@
 
 对于图金融数据，本文不直接在原始图结构上执行复杂图学习算法，而是先将图节点与边关系转换为节点级向量表示。具体做法包括：对节点原始属性进行规范化与编码；对邻域中边的数量、方向、金额统计和时间分布等进行聚合；将节点本身属性与邻域统计特征拼接形成统一向量。这样处理的目的在于，使 DGraphFin 等图金融数据能够与表格型交易数据共同进入本文统一的候选召回---异常评分链路\citep{dgraphfin_paper,dgraphfin_baseline}。
 
-在最终特征构造阶段，本文将不同来源的特征统一组织为固定维度向量表示，并确保其满足两项要求：一是能够作为候选检索模块的输入，被 FAISS-GPU 或 FlashANNS 索引所接收；二是能够作为 PyTOD 评分主干的输入，参与距离计算、候选排序和异常评分。为此，本文在特征构造后执行一次统一的向量维度检查、类型检查与异常值截断，保证后续系统执行过程的稳定性和一致性。通过这一设计，本文将原本异构的金融数据源统一映射为候选召回与异常评分共同接受的输入形式，从而为后续融合执行流程提供基础。
+在最终特征构造阶段，本文将不同来源的特征统一组织为固定维度向量表示，并确保其满足两项要求：一是能够作为候选检索模块的输入，被 FAISS-GPU 或 FlashANNS 索引所接收；二是能够作为 PyTOD 评分主干的输入，参与距离计算、候选排序和异常评分。为了满足实验要求，本文在特征构造后执行一次统一的向量维度检查、类型检查与异常值截断，保证后续系统执行过程的稳定性和一致性。通过这一设计，本文将原本异构的金融数据源统一映射为候选召回与异常评分共同接受的输入形式，为后续融合执行流程提供基础。
 
-图~\ref{fig:preprocess-overall} 展示了统一预处理链路，表~\ref{tab:feature-engineering} 细化了原始字段与派生特征之间的关系，图~\ref{fig:graph-vectorization} 则说明图金融数据如何映射到与表格数据兼容的节点向量表示。
+表~\ref{tab:feature-engineering} 细化了原始字段与派生特征之间的关系。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{图 3-3 数据预处理总体流程图。} 展示原始交易/图数据到规范化、编码、时间窗统计、向量表示生成的全过程。
-  \item \textbf{表 3-4 特征构造明细表。} 列出原始字段、派生字段、特征类型、预处理方式及其在系统中的作用。
-  \item \textbf{图 3-4 图金融数据向量化映射示意图。} 展示节点属性、边统计和邻域聚合如何转换为统一节点向量。
-\end{itemize}
-
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~3-3}
-  \caption{数据预处理总体流程图}
-  \label{fig:preprocess-overall}
-\end{figure}
 
 \begin{table}[htbp]
   \caption{特征构造明细}
   \label{tab:feature-engineering}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-4}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{p{2.8cm}p{4.1cm}p{2.4cm}p{3.2cm}p{4.3cm}}
+    \hline
+    原始字段/信息源 & 派生特征 & 特征类型 & 预处理方式 & 在系统中的作用\\
+    \hline
+    交易金额 & 标准化金额、对数金额、时间窗金额均值/波动统计 & 连续型 & 缺失填补、异常值截断、标准化/归一化 & 刻画交易规模及金额异常波动\\
+    交易时间戳 & 小时段、星期信息、夜间交易标记、平均交易间隔 & 时间型/统计型 & 时间规范化、周期化表达、滑动时间窗统计 & 捕捉异常时段行为与时序突变\\
+    账户标识及账户历史 & 账户时间窗交易次数、平均金额、活跃度统计 & 类别索引 + 统计型 & 安全编码、滑动窗口聚合 & 表征账户级长期与短期行为模式\\
+    设备标识 & 设备使用频次、设备共享度、账户---设备切换统计 & 类别型/统计型 & 缺失标识、频次编码、窗口统计 & 识别设备复用、盗刷与团伙风险\\
+    商户标识/商户类别 & 商户类别编码、商户频次、商户局部风险统计 & 类别型/统计型 & one-hot、频次编码或安全统计编码 & 增强交易场景相似性与商户异常识别能力\\
+    地理位置字段 & 地域编码、跨地域切换次数、地理跳变标记 & 类别型/统计型 & 地域粒度统一、编码、窗口切换统计 & 捕捉异地交易、短时跨区域异常\\
+    支付渠道/终端类型 & 渠道编码、终端类别向量、渠道频次统计 & 类别型 & one-hot 或频次编码 & 丰富候选召回的相似度基础，提升异常区分度\\
+    图节点原始属性 & 节点属性规范化向量 & 混合型 & 数值归一化、类别编码 & 形成图节点输入的基础表示\\
+    图边关系与邻域信息 & 入边/出边计数、邻域金额统计、方向比例、时间分布 & 关系统计型 & 邻域聚合、时间窗统计、向量拼接 & 将图结构信息映射为可检索、可评分的节点向量\\
+    融合后统一表示 & 固定维度最终向量 ($v_i\in\mathbb{R}^d$) & 向量型 & 维度检查、类型检查、异常值截断 & 作为 FlashANNS/FAISS-GPU 候选召回输入，并直接供 PyTOD 评分使用\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
 
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~3-4}
-  \caption{图金融数据向量化映射示意图}
-  \label{fig:graph-vectorization}
-\end{figure}
+\FloatBarrier
 
 \section{PyTOD 异常评分主干设计}
 
@@ -126,22 +151,17 @@
 
 从方法学角度看，PyTOD 的核心优势在于能够将距离计算、排序、聚合和局部评分统一表示为张量算子组合\citep{zhao2022tod}。对于本文而言，这意味着候选集合 $C_i$ 一旦产生，查询样本 $v_i$ 与候选集合中的向量就可以直接进入 PyTOD 的计算链路中，被表示为批量距离矩阵、局部近邻排序结果与聚合统计结果。具体而言，本文在异常评分阶段主要执行以下几类操作：第一，计算查询样本与候选集合之间的距离；第二，对候选集合中的邻近样本按距离进行排序或筛选；第三，对局部距离分布、密度差异或邻域结构统计执行聚合；第四，根据预定义评分函数输出异常分数。与全量评分相比，这一路径显著缩小了 PyTOD 需要处理的样本范围，从而使其更适合作为大规模系统中的精排与评分组件。
 
-在评分指标选择上，本文不局限于单一异常得分公式，而是保留基于距离、局部密度和邻域统计的通用评分接口。这一设计的原因在于，不同数据集和不同业务场景可能适合不同的异常性定义。由于 PyTOD 本身提供了统一张量算子组织能力，系统可以在不重构底层执行路径的前提下切换具体评分函数。因此，本文将 PyTOD 视为评分主干，而不是单一评分公式的固定实现。
+在评分指标选择上，本文不局限于单一异常得分公式，而是保留基于距离、局部密度和邻域统计的通用评分接口。这一设计的考虑在于，不同数据集和不同业务场景可能适合不同的异常性定义。由于 PyTOD 本身提供了统一张量算子组织能力，系统可以在不重构底层执行路径的前提下切换具体评分函数。也正因此，本文将 PyTOD 视为评分主干，而不是单一评分公式的固定实现。
 
 需要特别说明的是，本文对 PyTOD 的使用方式与其原始``直接处理大规模全样本异常检测''的思路存在差异。TOD/PyTOD 更强调通过自动批处理和多 GPU 支持缓解全量异常检测的复杂度问题，而本文则通过候选召回模块先缩减样本范围，再在较小候选集合上执行 PyTOD 评分。这种调整并不是削弱 PyTOD，而是让其更适合本文所关注的近实时金融异常检测系统：一方面保留了其 GPU 异常评分能力，另一方面则将系统整体复杂度更多地转移到``候选召回 + 数据路径优化''这一更可控的层面。
 
-图~\ref{fig:pytod-backbone} 给出了评分主干的执行流程，表~\ref{tab:score-ops-map} 对常用评分方式与张量算子映射进行了归纳，图~\ref{fig:full-vs-candidate} 则用于直观比较全量评分与候选集评分两条路径。
+图~\ref{fig:pytod-backbone} 给出了评分主干的执行流程，表~\ref{tab:score-ops-map} 对常用评分方式与张量算子映射进行了归纳。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{图 3-5 PyTOD 评分主干流程图。} 展示候选集合进入评分模块后，如何依次完成距离计算、局部排序、聚合统计与异常分数输出。
-  \item \textbf{表 3-5 本文采用的异常评分指标与算子映射表。} 列出距离型、局部密度型和统计型评分方式，以及其对应的 PyTOD 张量算子链。
-  \item \textbf{图 3-6 全量评分与候选集评分对比图。} 用于说明本文为何采用候选缩减后的评分路径。
 \end{itemize}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~3-5}
+  \includegraphics[width=\linewidth]{figures/fig3-2_PyTOD_scoring_backbone.png}
   \caption{PyTOD 评分主干流程图}
   \label{fig:pytod-backbone}
 \end{figure}
@@ -150,15 +170,23 @@
   \caption{异常评分指标与算子映射}
   \label{tab:score-ops-map}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-5}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{>{\raggedright\arraybackslash}p{2.0cm} >{\raggedright\arraybackslash}p{4.0cm} >{\raggedright\arraybackslash}p{3.1cm} >{\raggedright\arraybackslash}p{4.3cm} >{\raggedright\arraybackslash}p{2.2cm} >{\raggedright\arraybackslash}p{3.5cm}}
+    \hline
+    评分类型 & 代表性评分思路 & 候选集上的计算对象 & PyTOD 主要张量算子链 & 评分输出 & 在本文中的定位\\
+    \hline
+    距离型评分 & 依据查询样本与候选邻域的距离分布刻画异常程度，如第 $k$ 近邻距离、平均近邻距离 & 查询向量与候选集合之间的局部距离关系 & \texttt{cdist $\rightarrow$ topk $\rightarrow$ distance aggregation} & 距离型异常分数 & 作为主评分方式，直观反映样本偏离正常模式的程度\\
+    局部密度型评分 & 比较查询样本局部密度与邻域样本局部密度的差异，如局部可达密度比值 & 查询样本及其候选邻域的局部密度结构 & \texttt{cdist $\rightarrow$ topk $\rightarrow$ local density estimation $\rightarrow$ ratio aggregation} & 密度型异常分数 & 用于补充识别“相对异常”样本，增强对局部稀疏模式的敏感性\\
+    统计型评分 & 基于候选邻域内特征分布、分位点或边缘偏离程度进行评分 & 查询样本在候选邻域中的特征偏离情况 & \texttt{feature statistics / histogram / quantile ops $\rightarrow$ feature aggregation} & 统计型异常分数 & 作为轻量级辅助评分或对照评分方式\\
+    融合评分接口 & 对不同评分结果进行统一输出，形成最终风险排序 & 距离、密度、统计等候选集评分结果 & \texttt{score normalization $\rightarrow$ weighted / unified output} & 最终异常分数与排序结果 & 体现 PyTOD 作为统一评分主干的可扩展性\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
 
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~3-6}
-  \caption{全量评分与候选集评分对比}
-  \label{fig:full-vs-candidate}
-\end{figure}
+\FloatBarrier
 
 \section{FlashANNS 候选召回模块设计}
 
@@ -166,22 +194,15 @@
 
 在索引构建阶段，本文以向量化后的样本表示 $v_i$ 为输入，构建面向 ANN 检索的候选索引。对于规模较小且全部可驻留在显存内的实验场景，可直接使用 GPU 端索引完成近似搜索；对于规模更大或需要考虑外存路径的场景，则采用 FlashANNS 异步 I/O---计算流水线所支持的高吞吐检索路径\citep{xiao2025flashanns}。索引构建过程关注两个核心问题：一是保证查询时能够以低延迟定位到局部候选邻域；二是保证召回参数可调，以便在召回质量和系统吞吐之间进行平衡。
 
-在查询执行阶段，FlashANNS 的作用是对输入查询向量 $v_i$ 快速检索并返回一个候选集合 $C_i$。在本文系统中，候选集合不仅包含候选 ID，还包含必要的距离值、局部排序信息或可支持后续评分的数据引用。之所以强调候选输出格式，是因为后续 PyTOD 评分阶段若仍需对候选结果做大量 CPU 侧整理与转换，则候选召回本身的吞吐收益会被显著削弱。因此，本文在设计候选召回模块时，特别强调其输出格式与评分模块输入接口的一致性，即尽量让候选结果以可直接进入 GPU 评分链路的形式表达。
+在查询执行阶段，FlashANNS 的作用是对输入查询向量 $v_i$ 快速检索并返回一个候选集合 $C_i$。在本文系统中，候选集合不仅包含候选 ID，还包含必要的距离值、局部排序信息或可支持后续评分的数据引用。需要强调候选输出格式，是因为后续 PyTOD 评分阶段若仍需对候选结果做大量 CPU 侧整理与转换，则候选召回本身的吞吐收益会被显著削弱。因此，本文在设计候选召回模块时，特别强调其输出格式与评分模块输入接口的一致性，即尽量让候选结果以可直接进入 GPU 评分链路的形式表达。
 
-在参数组织方面，本文通过控制候选集合规模、召回近邻数量和部分索引搜索参数，平衡候选召回质量与系统吞吐率。候选集合过小，可能导致真实异常邻域缺失，从而影响评分质量；候选集合过大，则会使后续 PyTOD 评分重新承受高复杂度负担。因此，本研究中候选召回模块并不追求极限检索精度，而是追求``对异常评分足够好''的候选质量。这种设计使候选召回模块能够作为服务于系统总体目标的前端组件，而不是独立优化指标的终点。
+在参数组织方面，本文通过控制候选集合规模、召回近邻数量和部分索引搜索参数，平衡候选召回质量与系统吞吐率。候选集合过小，可能导致真实异常邻域缺失，从而影响评分质量；候选集合过大，则会使后续 PyTOD 评分重新承受高复杂度负担。因此，在本文的研究中，候选召回模块并不追求极限检索精度，而是追求``对异常评分足够好''的候选质量。这种设计使候选召回模块能够作为服务于系统总体目标的前端组件，而不是独立优化指标的终点。
 
-图~\ref{fig:flashanns-workflow} 展示了候选召回模块的基本执行过程，表~\ref{tab:recall-module-params} 总结了关键控制参数，图~\ref{fig:candidate-size-impact} 则说明候选集合规模对系统复杂度和后续评分负担的影响。
-
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{图 3-7 FlashANNS 候选召回执行流程图。} 展示索引构建、查询输入、候选返回和结果传递的基本流程。
-  \item \textbf{表 3-6 候选召回模块主要参数表。} 包括候选数、近邻数、召回控制参数、候选输出字段等。
-  \item \textbf{图 3-8 候选集合规模对系统复杂度影响示意图。} 展示候选集合过小、适中和过大对后续评分负担的影响。
-\end{itemize}
+图~\ref{fig:flashanns-workflow} 展示了候选召回模块的基本执行过程，表~\ref{tab:recall-module-params} 总结了关键控制参数。
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~3-7}
+  \includegraphics[width=\linewidth]{figures/fig3-3_FlashANNS_candidate_recall_flow.png}
   \caption{FlashANNS 候选召回执行流程图}
   \label{fig:flashanns-workflow}
 \end{figure}
@@ -190,53 +211,81 @@
   \caption{候选召回模块主要参数}
   \label{tab:recall-module-params}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-6}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{p{2.6cm}p{2.7cm}p{3.2cm}p{4.2cm}p{4.2cm}}
+    \hline
+    参数名称 & 符号/表示 & 含义 & 对系统的影响 & 设置原则\\
+    \hline
+    候选集合规模 & $|C_i|$ & 每个查询样本返回的候选样本数 & 过小会降低异常覆盖率，过大会增加后续评分负担 & 在召回质量与评分复杂度之间折中设置\\
+    近邻返回数量 & $k_{\mathrm{recall}}$ & 候选召回阶段实际返回的近邻数量 & 决定局部邻域完整性与后续评分的输入范围 & 与评分阶段使用的局部邻域规模保持协调\\
+    检索深度/访问强度参数 & \texttt{nprobe}、\texttt{efSearch} 等 & 控制 ANN 检索阶段访问的索引范围或搜索强度 & 参数越高通常召回质量更好，但吞吐下降 & 以“对评分足够好”为目标，而非追求极限检索精度\\
+    索引驻留方式 & GPU-resident / out-of-core & 候选索引驻留在显存内或通过外存路径访问 & 影响检索延迟、I/O 压力与系统扩展能力 & 小规模优先显存驻留，大规模场景采用 out-of-core 路径\\
+    候选输出字段 & ID、distance、rank、reference & 候选模块返回给评分模块的主要内容 & 决定后续 PyTOD 评分接口是否需要额外重组 & 尽量采用可直接进入 GPU 评分链路的输出格式\\
+    查询批大小 & \texttt{batch\_size} & 单次提交到候选召回模块的查询数量 & 影响设备利用率、时延与流水线连续性 & 与 GPU 资源、显存容量和时延约束共同确定\\
+    精排预算 & \texttt{rerank\_budget} & 进入高精度评分阶段的候选上限 & 控制精排复杂度与最终检测效果之间的平衡 & 与候选集合规模联动设置，避免全量重评分\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
 
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~3-8}
-  \caption{候选集合规模对系统复杂度影响示意图}
-  \label{fig:candidate-size-impact}
-\end{figure}
+\FloatBarrier
 
 \section{PyTOD--FlashANNS 融合执行流程}
 
 在完成数据预处理、向量化表示、候选召回模块和异常评分主干设计后，本文将二者整合为统一的执行流程。该流程覆盖从查询输入到异常结果输出的完整链路，其核心目标是在保持模块职责清晰的同时，减少阶段间不必要的数据复制和格式转换。具体而言，系统的整体执行过程包括以下五个步骤。
 
-第一步，系统接收原始交易记录、账户行为摘要或图节点样本，并将其经过第三节所述的数据预处理与特征构造过程转换为统一向量表示。第二步，向量表示作为查询输入候选召回模块，由 FlashANNS 或与之协同的 GPU ANN 检索后端从大规模样本索引中返回候选集合。第三步，候选集合在 GPU 侧完成必要的组织与重排，使其能够直接作为 PyTOD 评分主干的输入。第四步，PyTOD 在候选集合上执行张量化异常评分，输出异常分数及对应排序结果。第五步，系统根据异常分数输出风险样本、日志记录和必要的解释信息，并进入后续实验采样或部署监控链路。
+第一步，系统接收原始交易记录、账户行为摘要或图节点样本，并将其经过第三节所述的数据预处理与特征构造过程转换为统一向量表示。
 
-该融合执行流程的关键，不在于``把两个模块接起来''，而在于两者之间的中间结果表达与执行边界设计。若候选召回结果必须回传 CPU 再被整理成评分输入，则系统链路会重新引入高昂的 CPU$\leftrightarrow$GPU 往返与阶段同步成本；若中间结果能够以 GPU 常驻张量或低开销设备对象表达，则整个``候选召回---异常评分''过程将更接近统一 GPU 执行链路。也正因此，本文在第三章虽然主要完成逻辑模型构建，但已经明确后续第四章的核心方向：进一步将融合流程从``功能可行''压缩为``数据路径低开销''。
+第二步，向量表示作为查询输入候选召回模块，由 FlashANNS 或与之协同的 GPU ANN 检索后端从大规模样本索引中返回候选集合。
 
-图~\ref{fig:fusion-pipeline} 总结了融合系统的整体阶段划分，图~\ref{fig:intermediate-dataflow} 进一步展示查询向量、候选结果与评分中间张量在模块间的传递方式，表~\ref{tab:module-interfaces} 则对接口字段与数据驻留位置进行了统一定义。
+第三步，候选集合在 GPU 侧完成必要的组织与重排，使其能够直接作为 PyTOD 评分主干的输入。
 
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{图 3-9 PyTOD--FlashANNS 融合执行总流程图。} 展示输入、预处理、候选召回、候选组织、异常评分、结果输出六个阶段。
-  \item \textbf{图 3-10 模块间中间结果传递示意图。} 展示查询向量、候选结果和异常评分中间张量的流转方式，用于为第四章单卡数据路径优化做铺垫。
-  \item \textbf{表 3-7 模块接口定义表。} 列出输入格式、输出格式、主要字段和数据驻留位置。
-\end{itemize}
+第四步，PyTOD 在候选集合上执行张量化异常评分，输出异常分数及对应排序结果。
+
+第五步，系统根据异常分数输出风险样本、日志记录和必要的解释信息，并进入后续实验采样或部署监控链路。
+
+该融合执行流程的关键，不在于``把两个模块接起来''，而在于两者之间的中间结果表达与执行边界设计。若候选召回结果必须回传 CPU 再被整理成评分输入，则系统链路会重新引入高昂的 CPU$\leftrightarrow$GPU 往返与阶段同步成本；若中间结果能够以 GPU 常驻张量或低开销设备对象表达，则整个``候选召回---异常评分''过程将更接近统一 GPU 执行链路。也正因此，本文在第三章主要完成逻辑模型构建之后，将后续第四章的核心方向明确为：进一步将融合流程从``功能可行''压缩为``数据路径低开销''。
+
+图~\ref{fig:intermediate-dataflow} 进一步展示查询向量、候选结果与评分中间张量在模块间的传递方式，表~\ref{tab:module-interfaces} 则对接口字段与数据驻留位置进行了统一定义。
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~3-9}
-  \caption{PyTOD--FlashANNS 融合执行总流程图}
-  \label{fig:fusion-pipeline}
+  \includegraphics[width=\linewidth]{figures/fig3-4_intermediate_results_transfer.png}
+  \caption{模块间中间结果传递示意图}
+  \label{fig:intermediate-dataflow}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~3-10}
-  \caption{模块间中间结果传递示意图}
-  \label{fig:intermediate-dataflow}
+  \thesisplaceholderbox{正式版补齐图~3-5}
+  \caption{PyTOD--FlashANNS 融合执行总流程图}
+  \label{fig:fusion-pipeline}
 \end{figure}
 
 \begin{table}[htbp]
   \caption{模块接口定义}
   \label{tab:module-interfaces}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-7}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{p{3.4cm}p{4.2cm}p{2.8cm}p{4.6cm}p{3.2cm}}
+    \hline
+    模块/阶段 & 输入格式 & 输出格式 & 主要字段 & 数据默认驻留位置\\
+    \hline
+    数据预处理与特征构造 & 原始交易记录、账户行为摘要、图节点与边关系数据 & 统一固定维度向量表示 & 样本 ID、连续特征、类别编码、时间窗统计、节点聚合特征 & CPU 预处理后转入 GPU，后续逐步向 GPU 侧组织迁移\\
+    候选召回模块（FlashANNS / ANN 后端） & 查询向量 ($v_i\in\mathbb{R}^d$)、候选索引 ($\mathcal{I}$) & 候选集合 ($C_i$) & candidate ID、distance、local rank、必要索引引用 & 优先 GPU 侧驻留\\
+    候选组织与重排模块 & 候选 ID、局部距离、索引引用 & 可直接进入 PyTOD 的候选张量 & candidate tensor、distance tensor、mask / index mapping & GPU\\
+    异常评分模块（PyTOD） & 查询向量、候选张量、评分配置 & 异常分数与排序结果 & 距离矩阵、局部排序、聚合统计、异常分数 & GPU\\
+    结果输出与日志模块 & 异常分数、排序结果、运行时统计 & 风险样本列表、Top-$k$ 结果、日志记录 & sample ID、score、rank、timing、resource metrics & 最终小规模结果回传 CPU，日志落盘于主机侧\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
+
+\FloatBarrier
 
 \section{基础实验与初步验证}
 
@@ -244,30 +293,33 @@
 
 在功能正确性验证中，实验主要关注查询输入、候选集合生成、候选组织与异常评分输出之间是否存在接口不一致、结果异常或批处理错误。对于 1M 规模数据，本文通过抽样检查、异常分数排序和标签对照等方式验证系统链路的稳定性。随后，通过将候选评分结果与小规模全量评分结果进行比较，分析候选召回对异常评分效果的影响。如果候选集合过小导致异常模式无法被覆盖，则说明候选召回参数仍需调整；如果候选评分与全量评分在主要排序结果上具有较高一致性，则说明两阶段框架具备继续系统优化的基础。
 
-基础实验还将初步观察不同数据集下候选召回与异常评分之间的关系。例如，结构化交易数据中的候选召回结果往往对金额、时间和设备行为更敏感，而图金融数据中的候选召回结果则更容易受到邻域统计特征影响。通过这种初步实验，本文能够在进入第四章和第五章之前，先确认 PyTOD--FlashANNS 融合路线在不同金融数据形态下都具有基本可行性。
+基础实验还将初步观察不同数据集下候选召回与异常评分之间的关系。例如，结构化交易数据中的候选召回结果往往对金额、时间和设备行为更敏感，而图金融数据中的候选召回结果则更容易受到邻域统计特征影响。通过这种初步实验，本文能够在进入第四章和第五章对实验安排和实验结果详述之前，先确认 PyTOD--FlashANNS 融合路线在不同金融数据形态下都具有基本可行性。
 
-表~\ref{tab:basic-exp-setup} 给出了基础实验配置，图~\ref{fig:recall-vs-full-consistency} 用于验证候选评分与全量评分之间的一致性，图~\ref{fig:prelim-effectiveness} 则展示了不同数据集上的初步有效性结果。
-
-\paragraph{图表预留说明：}
-\begin{itemize}
-  \item \textbf{表 3-8 基础实验设置表。} 包括数据集、输入规模、候选数量、评分参数和实验目标。
-  \item \textbf{图 3-11 候选召回与全量评分一致性对比图。} 用于展示两阶段框架在基础场景下的可行性。
-  \item \textbf{图 3-12 不同数据集上的初步有效性结果图。} 用于展示结构化交易数据与图金融数据上的初步表现。
-\end{itemize}
+表~\ref{tab:basic-exp-setup} 给出了基础实验配置，图~\ref{fig:prelim-effectiveness} 则展示了不同数据集上的初步有效性结果。
 
 \begin{table}[htbp]
   \caption{基础实验设置}
   \label{tab:basic-exp-setup}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~3-8}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{p{2.6cm}p{9.0cm}p{4.2cm}}
+    \hline
+    实验项目 & 设置内容 & 主要目的\\
+    \hline
+    实验数据 & 采用 1M 规模真实或半真实金融数据集，包括结构化交易数据与图金融数据 & 验证融合链路在不同金融数据形态下的基本可行性\\
+    输入表示 & 统一使用预处理后的固定维度向量表示作为查询与索引输入 & 保证候选召回与异常评分共用同一输入接口\\
+    比较对象 & 候选集评分路径与小规模全量评分路径 & 检验两阶段框架是否会带来不可接受的效果损失\\
+    候选预算设置 & 采用固定候选集合规模，并在小/中/大预算下进行对比 & 观察候选规模对评分一致性与系统负担的影响\\
+    评分方式 & 采用 PyTOD 候选集评分主干，支持距离型、局部密度型和统计型评分接口 & 验证统一评分主干在两阶段链路中的适配性\\
+    验证内容 & 查询输入、候选生成、候选组织、评分输出与日志链路联通性 & 确认系统功能正确性与接口一致性\\
+    评价指标 & 异常分数排序一致性、Top-$k$ 风险样本重合度、PR-AUC / Recall@($k$) 等 & 评估两阶段评分与全量评分的一致性和初步有效性\\
+    实验结论目标 & 验证“候选召回---异常评分”流程可工作、效果可接受、具备进入系统优化阶段的基础 & 为第 4 章单卡系统优化和第 5 章多 GPU 扩展提供实验起点\\
+    \hline
+  \end{tabular}%
+  }
 \end{table}
-
-\begin{figure}[htbp]
-  \centering
-  \thesisplaceholderbox{正式版补齐图~3-11}
-  \caption{候选召回与全量评分一致性对比}
-  \label{fig:recall-vs-full-consistency}
-\end{figure}
 
 \begin{figure}[htbp]
   \centering
@@ -275,6 +327,8 @@
   \caption{不同数据集上的初步有效性结果}
   \label{fig:prelim-effectiveness}
 \end{figure}
+
+\FloatBarrier
 
 \section{本章小结}
 
