@@ -1,5 +1,5 @@
-scheme,qps,p99_latency_ms,pcie_transfer_count,gpu_utilization_pct
-原始链路,2850,68,6.4,47
-仅加速召回,3620,55,4.9,59
-GPU主导未完全重构,5080,34,2.7,74
-完整优化,6480,23,1.2,88
+scheme,scheme_desc,qps,p99_ms,pci_transfer_count,gpu_util
+Scheme 1,Original pipeline,2850.00,68.00,6.40,47.00
+Scheme 2,Recall-accelerated,3620.00,55.00,4.90,59.00
+Scheme 3,GPU-dominant partial refactor,5080.00,34.00,2.70,74.00
+Scheme 4,Full optimization,6480.00,23.00,1.20,88.00

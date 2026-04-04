@@ -1,83 +1,63 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parent
 CSV_PATH = ROOT / "single_gpu_overview_metrics.csv"
 OUT_PATH = ROOT / "fig4_16_single_gpu_overview.png"
-plt.rcParams["font.sans-serif"] = ["Songti SC", "Arial Unicode MS", "Hiragino Sans GB"]
+plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["axes.unicode_minus"] = False
+
+SCHEME_COLORS = ["#FFFFFF", "#D1D1D1", "#A8A8A8", "#6E6E6E"]
+
+
+def style_axes(ax: plt.Axes) -> None:
+    ax.set_axisbelow(True)
+    ax.grid(axis="y", linestyle="--", linewidth=0.7, color="#B8B8B8", alpha=0.45)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(direction="out", width=1.0, labelsize=12)
 
 
 def main() -> None:
     df = pd.read_csv(CSV_PATH)
-    metrics = ["QPS↑", "p99延迟↓", "PCIe传输次数↓", "GPU利用率↑"]
-    colors = ["#4A6FA5", "#E98A15", "#C0504D", "#6FA852"]
+    metrics = [
+        ("qps", "QPS", (0, 7000), 120.0),
+        ("p99_ms", "Latency (ms)", (0, 75), 1.6),
+        ("pci_transfer_count", "PCIe Transfer Count", (0, 7.2), 0.16),
+        ("gpu_util", "GPU Utilization (%)", (0, 95), 1.4),
+    ]
 
-    raw = np.column_stack(
-        [
-            df["qps"].to_numpy(dtype=float),
-            df["p99_latency_ms"].to_numpy(dtype=float),
-            df["pcie_transfer_count"].to_numpy(dtype=float),
-            df["gpu_utilization_pct"].to_numpy(dtype=float),
-        ]
-    )
+    fig, axes = plt.subplots(2, 2, figsize=(10.4, 6.4), dpi=220)
+    axes = axes.flatten()
 
-    normalized = np.column_stack(
-        [
-            raw[:, 0] / raw[:, 0].max(),
-            raw[:, 1].min() / raw[:, 1],
-            raw[:, 2].min() / raw[:, 2],
-            raw[:, 3] / raw[:, 3].max(),
-        ]
-    )
-
-    values = normalized.T
-    x = np.arange(len(metrics))
-    width = 0.18
-
-    fig, ax = plt.subplots(figsize=(10.4, 5.8), dpi=220)
-    offsets = np.linspace(-1.5 * width, 1.5 * width, len(df))
-    bars = []
-
-    for idx, (scheme, color, offset) in enumerate(zip(df["scheme"], colors, offsets)):
-        bar = ax.bar(x + offset, values[:, idx], width, label=scheme, color=color, edgecolor="none")
-        bars.append(bar)
-
-    ax.set_axisbelow(True)
-    ax.grid(axis="y", alpha=0.16)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.set_xticks(x, metrics)
-    ax.set_ylim(0, 1.18)
-    ax.set_ylabel("归一化性能得分（越高越好）")
-    ax.legend(ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.14), frameon=False)
-
-    raw_labels = np.column_stack(
-        [
-            [f"{v:.0f}" for v in raw[:, 0]],
-            [f"{v:.0f} ms" for v in raw[:, 1]],
-            [f"{v:.1f} 次" for v in raw[:, 2]],
-            [f"{v:.0f}%" for v in raw[:, 3]],
-        ]
-    )
-
-    for scheme_idx, bar_container in enumerate(bars):
-        for metric_idx, rect in enumerate(bar_container):
+    for ax, (column, ylabel, ylim, offset) in zip(axes, metrics):
+        bars = ax.bar(
+            range(len(df)),
+            df[column].to_numpy(dtype=float),
+            color=SCHEME_COLORS,
+            edgecolor="black",
+            linewidth=0.9,
+            width=0.68,
+        )
+        ax.set_xticks(range(len(df)), df["scheme"].values)
+        ax.set_xlabel("Schemes", fontsize=13)
+        ax.set_ylabel(ylabel, fontsize=13)
+        ax.set_ylim(*ylim)
+        style_axes(ax)
+        for rect, value in zip(bars, df[column].to_numpy(dtype=float)):
             ax.text(
                 rect.get_x() + rect.get_width() / 2,
-                rect.get_height() + 0.03,
-                raw_labels[scheme_idx, metric_idx],
+                value + offset,
+                f"{value:.2f}",
                 ha="center",
                 va="bottom",
-                rotation=90,
-                fontsize=9.8,
+                fontsize=10.0,
             )
 
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    fig.tight_layout()
     fig.savefig(OUT_PATH, bbox_inches="tight")
     plt.close(fig)
 

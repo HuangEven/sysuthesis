@@ -1,5 +1,5 @@
-scheme,query_prep,ann_recall,pack_candidates,pytod_score,output,total_ms
-原始链路,5.6,15.8,20.7,12.5,3.9,58.5
-仅加速召回,5.0,10.6,18.2,12.0,3.5,49.3
-GPU主导未完全重构,3.2,9.1,8.6,10.1,2.4,33.4
-完整优化,2.2,7.4,4.0,8.0,1.6,23.2
+scheme,scheme_desc,query_prep,ann_recall,pack_candidates,pytod_score,output,latency_ms
+Scheme 1,Original pipeline,5.60,15.80,20.70,12.50,3.90,58.50
+Scheme 2,Recall-accelerated,5.00,10.60,18.20,12.00,3.50,49.30
+Scheme 3,GPU-dominant partial refactor,3.20,9.10,8.60,10.10,2.40,33.40
+Scheme 4,Full optimization,2.20,7.40,4.00,8.00,1.60,23.20
