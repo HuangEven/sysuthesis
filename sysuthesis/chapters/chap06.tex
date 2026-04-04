@@ -339,15 +339,15 @@
 
 \section{核心结果展示}
 
-本节从总体效果、单卡优化效果、多 GPU 扩展效果以及不同数据规模下的系统表现四个层面展示实验结果。
+本节从融合系统总体对比、单卡优化与多 GPU 扩展收益汇总，以及不同数据规模下的系统表现趋势三个层面展示实验结果。
 
 \subsection{融合系统与基线系统的总体对比}
 
 在 1M 规模真实/半真实数据上，比较 PyTOD--FlashANNS 融合系统与若干基线系统：仅使用 PyTOD 全量评分、仅使用候选召回结果作为风险判断依据、以及未引入 GPU 常驻链路与后端重构的初始融合实现。结果需同时体现检测效果与系统性能，突出``候选召回压缩评分范围 + 候选集上张量化评分''在效果与效率间的平衡价值\citep{zhao2022tod,xiao2025flashanns}。
 
-\subsection{单卡优化前后的总体对比}
+\subsection{单卡优化与多 GPU 扩展收益汇总}
 
-对比第四章单卡优化前后的端到端表现：原始分段链路、仅启用候选召回加速、启用 GPU 常驻但未完成后端重构、以及完整单卡优化方案。重点体现 CPU$\leftrightarrow$GPU 往返次数与 I/O 等待对端到端收益的影响\citep{faiss_gpu_wiki,rapids_rmm_pinned,xiao2025flashanns}。
+对比第四章单卡优化与第五章多 GPU 扩展后的端到端表现：原始分段链路、完整单卡优化、2 GPU replicated 扩展以及 4 GPU replicated 扩展。重点体现单卡优化主要降低阶段边界开销与尾延迟，而多 GPU 扩展主要提升吞吐上限并进一步降低 CPU 压力\citep{faiss_gpu_wiki,rapids_rmm_pinned,xiao2025flashanns,cuvs_multi_gpu_nn}。
 
 \subsection{多 GPU 扩展结果对比}
 
@@ -355,52 +355,74 @@
 
 \subsection{不同数据规模下的系统表现对比}
 
-比较 1M、10M、50M 三个规模层级下系统的瓶颈迁移与收益变化，统一呈现``方法有效性''与``系统可扩展性''两条主线。
+比较 1M、10M、50M、100M 四个规模层级下系统的瓶颈迁移与收益变化，统一呈现``方法有效性''与``系统可扩展性''两条主线。
 
-为便于综合展示，表~\ref{tab:core-summary} 汇总了核心结果，图~\ref{fig:fusion-vs-baselines}、图~\ref{fig:single-gpu-before-after}、图~\ref{fig:multi-gpu-scaling} 和图~\ref{fig:scale-comparison} 分别对应总体对比、单卡优化、多 GPU 扩展以及跨规模表现四个观察视角。
+为便于综合展示，表~\ref{tab:core-summary} 汇总了核心结果，图~\ref{fig:fusion-vs-baselines}、图~\ref{fig:single-gpu-before-after}、图~\ref{fig:multi-gpu-scaling} 分别从检测效果、吞吐能力和效果--性能折中三个视角对融合系统与基线方案进行比较，图~\ref{fig:scale-comparison} 汇总单卡优化与多 GPU 扩展的收益差异，而图~\ref{fig:scale-trend} 则展示跨规模趋势。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{表 6-7 核心结果汇总表。}
-  \item \textbf{图 6-4 融合系统与基线系统总体对比图。}
-  \item \textbf{图 6-5 单卡优化前后对比图。}
-  \item \textbf{图 6-6 多 GPU 扩展曲线图。}
-  \item \textbf{图 6-7 不同规模下系统表现对比图。}
+  \item \textbf{图 6-4 融合系统与基线系统检测效果对比图。}
+  \item \textbf{图 6-5 融合系统与基线系统吞吐对比图。}
+  \item \textbf{图 6-6 融合系统效果与性能折中图。}
+  \item \textbf{图 6-7 单卡优化与多 GPU 扩展收益图。}
+  \item \textbf{图 6-8 不同规模下系统表现趋势图。}
 \end{itemize}
 
 \begin{table}[htbp]
   \caption{核心结果汇总}
   \label{tab:core-summary}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~6-7}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
+  \begin{tabular}{p{2.5cm}p{2.2cm}p{3.0cm}p{5.2cm}p{2.0cm}}
+    \hline
+    结果主题 & 代表方案 & 核心指标 & 关键结果 & 支撑图表 \\
+    \hline
+    融合架构总体有效性 & 完整融合 & PR-AUC, QPS & 在 PR-AUC 仅略低于全量评分的前提下，QPS 相比全量评分显著提升，说明``候选召回 + 张量化评分''能够兼顾效果与吞吐 & 图 6-4--图 6-6 \\
+    单卡链路优化收益 & 单卡优化 & QPS, p99 Latency, CPU Utilization & GPU 主导执行链路显著压缩阶段边界开销，p99 延迟和 CPU 负载同步下降，端到端吞吐明显提升 & 图 4-14--图 4-16，图 6-7 \\
+    多 GPU replicated 扩展性 & 2/4 GPU replicated & QPS, CPU Utilization & GPU 数量增加时系统吞吐近似线性增长，CPU 利用率未同步放大，说明控制面/数据平面分离设计有效 & 图 5-15，图 6-7 \\
+    跨卡归并策略差异 & GPU merge vs.\ CPU aggregation & avg/p99 Latency & 当索引无法完整复制时，GPU 侧归并优于 CPU 聚合，说明``CPU 退出数据平面''在多 GPU 场景中仍然重要 & 图 5-16，表 5-2 \\
+    跨规模可行性 & 完整融合 & QPS, p99 Latency, PR-AUC & 从 1M 扩展到 100M 时，QPS 随规模增大而下降、p99 上升，但 PR-AUC 基本稳定，且融合系统持续优于基线 & 图 6-8 \\
+    \hline
+  \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~6-4}
-  \caption{融合系统与基线系统总体对比}
+  \includegraphics[width=0.8\linewidth]{plot_assets/ch06_fusion_compare/fig6_4_fusion_accuracy.png}
+  \caption{融合系统与基线系统检测效果对比}
   \label{fig:fusion-vs-baselines}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~6-5}
-  \caption{单卡优化前后对比}
+  \includegraphics[width=0.8\linewidth]{plot_assets/ch06_fusion_compare/fig6_5_fusion_qps.png}
+  \caption{融合系统与基线系统吞吐对比}
   \label{fig:single-gpu-before-after}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~6-6}
-  \caption{多 GPU 扩展曲线}
+  \includegraphics[width=0.82\linewidth]{plot_assets/ch06_fusion_compare/fig6_6_fusion_tradeoff.png}
+  \caption{融合系统效果与性能折中}
   \label{fig:multi-gpu-scaling}
 \end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~6-7}
-  \caption{不同规模下系统表现对比}
+  \includegraphics[width=\linewidth]{plot_assets/ch06_single_multi_summary/fig6_7_single_multi_summary.png}
+  \caption{单卡优化与多 GPU 扩展收益对比}
   \label{fig:scale-comparison}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{plot_assets/ch06_scale_trends/fig6_8_scale_trends.png}
+  \caption{不同规模下系统表现趋势}
+  \label{fig:scale-trend}
 \end{figure}
 
 \section{结果讨论}
@@ -419,22 +441,37 @@
 
 \paragraph{图表预留说明：}
 \begin{itemize}
-  \item \textbf{图 6-8 结果讨论逻辑图。}
-  \item \textbf{表 6-8 关键发现与对应证据表。}
+  \item \textbf{图 6-9 结果讨论逻辑图。}
+  \item \textbf{表 6-8 核心结果与证据对应表。}
 \end{itemize}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~6-8}
+  \thesisplaceholderbox{正式版补齐图~6-9}
   \caption{结果讨论逻辑图}
   \label{fig:discussion-logic}
 \end{figure}
 
 \begin{table}[htbp]
-  \caption{关键发现与对应证据}
+  \caption{核心结果与证据对应}
   \label{tab:findings-evidence}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~6-8}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
+  \begin{tabular}{p{3.1cm}p{3.4cm}p{5.4cm}p{2.0cm}}
+    \hline
+    结论 & 直接证据（图/表） & 描述性说明 & 章节位置 \\
+    \hline
+    融合系统在接近最佳检测效果下显著提升吞吐 & 图 6-4，图 6-5，图 6-6，表 6-7 & 完整融合方案的 PR-AUC 接近全量评分，但 QPS 显著领先，证明两阶段融合路线在效果与性能之间取得更优平衡 & 6.4.1 \\
+    单卡优化的核心收益来自数据通路压缩而非单一算子加速 & 图 4-14，图 4-16，图 6-7 & 查询组织、候选打包和结果回传阶段开销下降最明显，说明 GPU 主导链路实质上减少了 CPU$\leftrightarrow$GPU 往返与同步等待 & 4.8，6.4.2 \\
+    多 GPU 主方案应优先采用 replicated 架构 & 表 5-2，图 5-15，图 6-7 & 在显存允许的前提下，replicated 方案扩展路径更简单、CPU 压力更低，吞吐随 GPU 数量增加保持稳定增长 & 5.3，5.8，6.4.2 \\
+    必须跨卡归并时 GPU 侧归并优于 CPU 聚合 & 图 5-16，表 5-2 & GPU merge 的平均延迟与 p99 延迟均低于 CPU aggregation，说明大规模中间结果不宜回流主机侧处理 & 5.5，5.8 \\
+    I/O 路径组织决定多 GPU 扩展上限 & 图 5-11，图 5-18，图 6-8 & 当多卡共享 PCIe/SSD 路径时，p99 延迟上升且 QPS 恶化，合理 lane 绑定是释放多 GPU 吞吐的必要条件 & 5.6，5.8，6.4.3 \\
+    out-of-core 融合方案在超大规模下仍具工程可行性 & 图 6-8，表 6-7 & 即便扩展到 100M 规模，系统仍保持稳定的 PR-AUC，并在吞吐和尾延迟上继续优于基线，说明外存候选召回结合 GPU 评分具有可行性 & 6.4.3 \\
+    \hline
+  \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \section{局限性分析}
@@ -448,14 +485,28 @@
 \paragraph{图表预留说明：}
 \begin{itemize}
   \item \textbf{表 6-9 研究局限性与影响范围表。}
-  \item \textbf{图 6-9 本文结论适用边界示意图。}
+  \item \textbf{图 6-10 本文结论适用边界示意图。}
 \end{itemize}
 
 \begin{table}[htbp]
   \caption{研究局限性与影响范围}
   \label{tab:limitations}
   \centering
-  \thesisplaceholderbox[0.95\linewidth]{正式版补齐表~6-9}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{adjustbox}{max width=\linewidth}
+  \begin{tabular}{p{2.2cm}p{2.5cm}p{4.6cm}p{2.6cm}p{2.9cm}}
+    \hline
+    局限性 & 影响因素 & 原因分析 & 影响范围 & 应对策略 \\
+    \hline
+    replicated 扩展受显存限制 & 索引规模、候选预算、GPU 显存容量 & replicated 方案需要在每张 GPU 上复制索引与候选缓存，规模继续增大时显存先成为硬约束 & 限制可直接扩展的 GPU 数量与单卡可容纳索引规模 & 转向 sharded + GPU 归并，配合压缩索引或分层召回 \\
+    I/O 路径仍可能成为大规模吞吐瓶颈 & SSD 带宽、PCIe lane、队列深度 & out-of-core 场景下 SSD 访问与 GPU 计算虽可重叠，但共享路径冲突仍会拉高排队时间与 p99 & 对 50M/100M 规模及多卡并发场景影响更明显 & 采用拓扑感知 I/O 绑定、独立 lane 准入控制与队列参数调优 \\
+    部署收益依赖硬件拓扑条件 & GPU--SSD--PCIe--NUMA 布局、驱动/GDS 支持 & 本文优化收益建立在较好的本地 NVMe、PCIe Gen4 和可控 NUMA 路径基础上，不同部署环境下收益会波动 & 影响方案跨平台复现的一致性 & 部署前进行拓扑画像与基准测试，优先在路径清晰的节点上落地 \\
+    超大规模真实金融数据验证仍有限 & 真实数据可得性、合规约束 & 10M/50M/100M 规模实验主要依赖高保真合成数据，尚不能完全替代真实业务负载 & 影响结论向生产金融场景外推时的置信度 & 与机构数据平台联合验证，并补充真实在线负载回放实验 \\
+    尚未覆盖多机分布式扩展 & 网络带宽、跨机通信、分布式索引管理 & 本文重点解决单机多 GPU 路径，尚未进一步讨论跨机查询分发与层次化归并 & 限制结论直接外推到更大规模集群部署 & 后续引入 RDMA/NVLink-aware 通信与分布式索引分层调度 \\
+    \hline
+  \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \begin{figure}[htbp]
@@ -468,5 +519,3 @@
 \section{本章小结}
 
 本章从实验环境、数据集与任务设置、评价指标、核心结果展示、结果讨论与局限性分析六个方面，对本文所提出的 PyTOD--FlashANNS 融合异常检测系统进行了统一实验验证。实验结果表明，两阶段融合架构能够在保持合理检测效果的前提下显著提升系统整体吞吐率；其中，GPU 主导端到端执行链路降低了 CPU$\leftrightarrow$GPU 数据搬运与阶段同步开销，多 GPU replicated 扩展进一步提升吞吐，而 GPU 侧归并与拓扑感知 I/O 控制在更复杂场景下补足扩展能力\citep{xiao2025flashanns,cuvs_multi_gpu_nn,gds_overview}。
-
-

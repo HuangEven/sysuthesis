@@ -1,0 +1,5 @@
+scheme,scheme_desc,qps,p99_latency_ms,cpu_util
+Scheme 1,Original pipeline,2850.00,68.00,61.00
+Scheme 2,Single-GPU optimized,6480.00,23.00,34.00
+Scheme 3,2 GPU scaled,24760.00,14.60,30.50
+Scheme 4,4 GPU scaled,47620.00,12.90,26.50
