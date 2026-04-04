@@ -1,0 +1,168 @@
+<mxfile host="app.diagrams.net" modified="2026-04-04T15:20:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="cpu-control-plane" name="Page-1">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="cpuRegion" value="CPU 控制面" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontStyle=1;fontSize=20;align=left;spacingLeft=18;verticalAlign=top;spacingTop=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="1320" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="gpuRegion" value="GPU 数据平面" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontStyle=1;fontSize=20;align=left;spacingLeft=18;verticalAlign=top;spacingTop=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="1320" height="420" as="geometry"/>
+        </mxCell>
+        <mxCell id="queue" value="请求队列&#xa;统一入口 / 排队" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B45309;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="90" width="180" height="86" as="geometry"/>
+        </mxCell>
+        <mxCell id="microbatch" value="形成微批&#xa;bounded batching" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B45309;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="90" width="210" height="86" as="geometry"/>
+        </mxCell>
+        <mxCell id="loadMon" value="GPU 负载监控&#xa;利用率 / 队列长度 / 显存余量" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B45309;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="590" y="90" width="260" height="86" as="geometry"/>
+        </mxCell>
+        <mxCell id="dispatch" value="按批分配到 GPU_i&#xa;动态负载均衡" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B45309;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="90" width="220" height="86" as="geometry"/>
+        </mxCell>
+        <mxCell id="result" value="收集结果&#xa;仅最终小规模输出" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#047857;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="90" width="150" height="86" as="geometry"/>
+        </mxCell>
+        <mxCell id="cpuNote" value="CPU 仅负责排队、微批形成、负载监控、任务分发与最终小规模结果汇总" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#F59E0B;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="120" y="205" width="1180" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="noCandidateNote" value="候选集合与评分中间张量始终留在 GPU，不回 CPU" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontSize=15;fontStyle=1;fontColor=#991B1B;" vertex="1" parent="1">
+          <mxGeometry x="430" y="265" width="520" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="gpu0" value="GPU 0 完整本地闭环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontStyle=1;fontSize=18;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="110" y="420" width="310" height="245" as="geometry"/>
+        </mxCell>
+        <mxCell id="g0idx" value="索引副本 + 查询组织" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="145" y="468" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g0recall" value="FlashANNS / FAISS-GPU 候选召回" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="145" y="517" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g0score" value="PyTOD 异常评分" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="145" y="566" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g0final" value="最终结果 + 日志元信息" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="145" y="615" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="gpu1" value="GPU 1 完整本地闭环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontStyle=1;fontSize=18;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="545" y="420" width="310" height="245" as="geometry"/>
+        </mxCell>
+        <mxCell id="g1idx" value="索引副本 + 查询组织" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="580" y="468" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g1recall" value="FlashANNS / FAISS-GPU 候选召回" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="580" y="517" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g1score" value="PyTOD 异常评分" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="580" y="566" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g1final" value="最终结果 + 日志元信息" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="615" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="gpu2" value="GPU 2 完整本地闭环" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#1D4ED8;fontStyle=1;fontSize=18;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="980" y="420" width="310" height="245" as="geometry"/>
+        </mxCell>
+        <mxCell id="g2idx" value="索引副本 + 查询组织" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1015" y="468" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g2recall" value="FlashANNS / FAISS-GPU 候选召回" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1015" y="517" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g2score" value="PyTOD 异常评分" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#60A5FA;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1015" y="566" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="g2final" value="最终结果 + 日志元信息" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1015" y="615" width="240" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="smallResultNote" value="回收内容：异常分数 / Top-k / 必要日志" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1085" y="205" width="250" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#92400E;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="queue" target="microbatch">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#92400E;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="microbatch" target="loadMon">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#92400E;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="loadMon" target="dispatch">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EA580C;strokeWidth=2;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dispatch" target="g0idx">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="930" y="250"/>
+              <mxPoint x="265" y="250"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EA580C;strokeWidth=2;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dispatch" target="g1idx">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1005" y="280"/>
+              <mxPoint x="700" y="280"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EA580C;strokeWidth=2;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dispatch" target="g2idx">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="310"/>
+              <mxPoint x="1135" y="310"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#10B981;strokeWidth=2;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.2;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="g0final" target="result">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="634"/>
+              <mxPoint x="400" y="340"/>
+              <mxPoint x="1190" y="340"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#10B981;strokeWidth=2;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="g1final" target="result">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="835" y="634"/>
+              <mxPoint x="835" y="315"/>
+              <mxPoint x="1235" y="315"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#10B981;strokeWidth=2;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.8;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="g2final" target="result">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1270" y="634"/>
+              <mxPoint x="1270" y="290"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="gpu0" target="loadMon">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="195" y="385"/>
+              <mxPoint x="620" y="385"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="gpu1" target="loadMon">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="365"/>
+              <mxPoint x="720" y="365"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#6B7280;strokeWidth=2;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="gpu2" target="loadMon">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1205" y="345"/>
+              <mxPoint x="820" y="345"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

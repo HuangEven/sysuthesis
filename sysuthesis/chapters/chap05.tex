@@ -109,7 +109,7 @@
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~5-5}
+  \includegraphics[width=\linewidth]{figures/fig5_5_multi_gpu_overall_architecture.drawio.png}
   \caption{数据并行与索引复制多 GPU 架构}
   \label{fig:replicated-arch}
 \end{figure}
@@ -149,8 +149,8 @@
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~5-7}
-  \caption{CPU 控制面调度流程}
+  \includegraphics[width=\linewidth]{figures/fig5_7_cpu_control_plane_microbatch.drawio.png}
+  \caption{CPU 控制面调度与微批示意}
   \label{fig:control-plane}
 \end{figure}
 
@@ -212,19 +212,19 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 
 本文引入\textbf{拓扑感知 I/O lane 绑定与准入控制}机制：运行前分析 GPU、SSD、PCIe root complex、PCIe switch 与 NUMA 节点之间的关系；运行时尽量将 GPU 与 SSD 通道进行 lane 级绑定，并对每条 lane 的 in-flight 请求数做有界控制，以避免过度并发导致尾延迟失控。
 
-图~\ref{fig:topology} 给出了 GPU、SSD、PCIe 与 NUMA 的拓扑关系，图~\ref{fig:io-lane-binding} 说明了 I/O lane 绑定与路径冲突的差异，表~\ref{tab:io-lanes} 则整理了准入控制所使用的关键参数。
+图~\ref{fig:topology} 以左右对比方式展示了拓扑感知 I/O lane 在合理绑定与共享冲突两种条件下的 GPU、SSD、PCIe 与 NUMA 关系，图~\ref{fig:io-lane-binding} 说明了 I/O lane 绑定与路径冲突的差异，表~\ref{tab:io-lanes} 则整理了准入控制所使用的关键参数。
 
 \paragraph{图表预留说明：}
 \begin{itemize}
-  \item \textbf{图 5-11 GPU--SSD--PCIe--NUMA 拓扑图。}
+  \item \textbf{图 5-11 拓扑感知 I/O lane 示意图。}
   \item \textbf{图 5-12 I/O lane 绑定与共享路径冲突示意图。}
   \item \textbf{表 5-6 I/O lane 准入控制参数表。}
 \end{itemize}
 
 \begin{figure}[htbp]
   \centering
-  \thesisplaceholderbox{正式版补齐图~5-11}
-  \caption{GPU--SSD--PCIe--NUMA 拓扑图}
+  \includegraphics[width=\linewidth]{figures/fig5_11_topology_aware_io_lane.drawio.png}
+  \caption{拓扑感知 I/O lane 示意}
   \label{fig:topology}
 \end{figure}
 
@@ -339,5 +339,3 @@ cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{T
 本章围绕多 GPU 场景下的系统扩展问题，提出并实现了以\textbf{数据并行与索引复制}为核心的主方案，并进一步讨论 CPU 控制面调度、GPU 侧跨卡归并、NCCL 通信以及拓扑感知 I/O lane 绑定与准入控制等关键机制。本文将 CPU 定位为控制面调度者，使每张 GPU 尽可能独立完成本地候选召回与异常评分闭环，从而最大程度保留第四章中已经构建的 GPU 主导执行链路优势\citep{cuvs_multi_gpu_nn,cuvs_dist_mode}。
 
 本章还表明，多 GPU 扩展并不是简单地``增加更多 GPU''，而是一项涉及查询级并行策略、设备间通信语义和存储拓扑组织的系统工程问题。当 replicated 条件成立时，查询级并行与索引复制是吞吐优先场景的扩展路线；当必须跨卡归并时，GPU 侧归并和 NCCL 通信是优于 CPU 聚合的兜底方案；而无论采用哪种路径，多 GPU 上限都将受到 I/O 路径和拓扑关系的强烈影响\citep{gds_overview,nccl_stream_semantics}。
-
-
