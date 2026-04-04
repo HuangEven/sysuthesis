@@ -1,0 +1,5 @@
+scheme,qps,p99_latency_ms,pcie_transfer_count,gpu_utilization_pct
+原始链路,2850,68,6.4,47
+仅加速召回,3620,55,4.9,59
+GPU主导未完全重构,5080,34,2.7,74
+完整优化,6480,23,1.2,88
