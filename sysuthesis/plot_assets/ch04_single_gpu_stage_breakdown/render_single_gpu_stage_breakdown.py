@@ -14,17 +14,15 @@ DATASETS = [
     (
         ROOT / "single_gpu_stage_breakdown_1m.csv",
         ROOT / "fig4_14_single_gpu_stage_breakdown_1m.png",
-        "1M 数据规模下单卡各阶段耗时分解",
     ),
     (
         ROOT / "single_gpu_stage_breakdown_10m.csv",
         ROOT / "fig4_15_single_gpu_stage_breakdown_10m.png",
-        "10M 数据规模下单卡各阶段耗时分解",
     ),
 ]
 
 
-def render(csv_path: Path, out_path: Path, title: str) -> None:
+def render(csv_path: Path, out_path: Path) -> None:
     df = pd.read_csv(csv_path)
     x = np.arange(len(df))
     width = 0.66
@@ -51,35 +49,19 @@ def render(csv_path: Path, out_path: Path, title: str) -> None:
     ax.set_xticks(x, df["scheme"].values)
     ax.tick_params(axis="x", rotation=12)
     ax.set_ylabel("阶段耗时 / ms")
-    ax.set_title(title, fontsize=15, fontweight="bold", pad=10)
-    ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.20), frameon=False)
+    ax.legend(ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.13), frameon=False)
 
     totals = df["total_ms"].values
     for idx, total in enumerate(totals):
         ax.text(idx, total + totals.max() * 0.03, f"{total:.1f}", ha="center", va="bottom", fontsize=11, fontweight="bold")
 
-    ax.text(
-        0.35,
-        df.loc[0, "query_prep"] + df.loc[0, "ann_recall"] + df.loc[0, "pack_candidates"] * 0.58,
-        "pack_candidates 开销最高",
-        color="#7A2626",
-        fontsize=11.5,
-        fontweight="bold",
-    )
-    ax.text(
-        0.05,
-        totals[0] - df.loc[0, "output"] * 0.45,
-        "CPU-GPU 边界回传更重",
-        color="#994F1B",
-        fontsize=10.5,
-    )
     ax.set_ylim(0, totals.max() * 1.18)
 
-    fig.tight_layout(rect=(0, 0, 1, 0.92))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
 
 
 if __name__ == "__main__":
-    for csv_path, out_path, title in DATASETS:
-        render(csv_path, out_path, title)
+    for csv_path, out_path in DATASETS:
+        render(csv_path, out_path)

@@ -52,8 +52,7 @@ xticks(ax, 1:numel(metrics));
 xticklabels(ax, metrics);
 ylim(ax, [0, 1.18]);
 ylabel(ax, '归一化性能得分（越高越好）', 'FontName', 'Songti SC', 'FontSize', 13);
-title(ax, '单卡性能综合对比', 'FontName', 'Songti SC', 'FontSize', 15, 'FontWeight', 'bold');
-legend(ax, tbl.scheme, 'Location', 'northoutside', 'Orientation', 'horizontal', 'NumColumns', 2, 'FontName', 'Songti SC');
+legend(ax, tbl.scheme, 'Location', 'northoutside', 'Orientation', 'horizontal', 'NumColumns', 2, 'FontName', 'Songti SC', 'Box', 'off');
 
 raw_labels = strings(size(raw));
 raw_labels(:, 1) = compose('%.0f', raw(:, 1));
@@ -70,11 +69,6 @@ for i = 1:numel(hb)
             'FontName', 'Times New Roman', 'FontSize', 10.5, 'Rotation', 90);
     end
 end
-
-annotation(fig, 'textbox', [0.13, 0.15, 0.28, 0.08], 'String', ...
-    '完整优化在吞吐、尾延迟、PCIe 往返和 GPU 利用率上均占优', ...
-    'FitBoxToText', 'on', 'FontName', 'Songti SC', 'FontSize', 11, ...
-    'EdgeColor', [0.51, 0.70, 0.40], 'BackgroundColor', [0.94, 0.98, 0.92]);
 
 exportgraphics(fig, out_path, 'Resolution', 220);
 close(fig);

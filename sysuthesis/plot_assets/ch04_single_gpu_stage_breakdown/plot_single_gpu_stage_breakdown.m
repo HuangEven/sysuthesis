@@ -4,11 +4,9 @@ function plot_single_gpu_stage_breakdown()
 root_dir = fileparts(mfilename('fullpath'));
 datasets = {
     'single_gpu_stage_breakdown_1m.csv', ...
-    'fig4_14_single_gpu_stage_breakdown_1m.png', ...
-    '1M 数据规模下单卡各阶段耗时分解' ; ...
+    'fig4_14_single_gpu_stage_breakdown_1m.png' ; ...
     'single_gpu_stage_breakdown_10m.csv', ...
-    'fig4_15_single_gpu_stage_breakdown_10m.png', ...
-    '10M 数据规模下单卡各阶段耗时分解'
+    'fig4_15_single_gpu_stage_breakdown_10m.png'
 };
 
 stage_labels = {'query\_prep', 'ann\_recall', 'pack\_candidates', 'pytod\_score', 'output'};
@@ -23,7 +21,6 @@ colors = [
 for idx = 1:size(datasets, 1)
     csv_path = fullfile(root_dir, datasets{idx, 1});
     out_path = fullfile(root_dir, datasets{idx, 2});
-    fig_title = datasets{idx, 3};
 
     tbl = readtable(csv_path, 'TextType', 'string');
     values = tbl{:, stage_labels};
@@ -51,8 +48,7 @@ for idx = 1:size(datasets, 1)
     xticklabels(ax, tbl.scheme);
     xtickangle(ax, 12);
     ylabel(ax, '阶段耗时 / ms', 'FontName', 'Songti SC', 'FontSize', 13);
-    title(ax, fig_title, 'FontName', 'Songti SC', 'FontSize', 15, 'FontWeight', 'bold');
-    legend(ax, stage_labels, 'Location', 'northoutside', 'Orientation', 'horizontal', 'NumColumns', 3);
+    legend(ax, stage_labels, 'Location', 'northoutside', 'Orientation', 'horizontal', 'NumColumns', 3, 'Box', 'off');
 
     totals = sum(values, 2);
     for i = 1:numel(totals)
@@ -60,15 +56,6 @@ for idx = 1:size(datasets, 1)
             'HorizontalAlignment', 'center', 'FontName', 'Times New Roman', ...
             'FontSize', 12, 'FontWeight', 'bold');
     end
-
-    text(1.05, values(1, 1) + values(1, 2) + values(1, 3) / 2, ...
-        '\leftarrow pack\_candidates 开销最高', ...
-        'Color', [0.55, 0.16, 0.16], 'FontName', 'Songti SC', 'FontSize', 12, ...
-        'FontWeight', 'bold');
-
-    text(1.02, totals(1) - values(1, 5) / 2, ...
-        'CPU\leftrightarrowGPU 边界回传更重', ...
-        'Color', [0.60, 0.24, 0.12], 'FontName', 'Songti SC', 'FontSize', 11);
 
     ylim(ax, [0, max(totals) * 1.18]);
     exportgraphics(fig, out_path, 'Resolution', 220);

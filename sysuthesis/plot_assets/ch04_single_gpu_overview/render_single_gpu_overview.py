@@ -54,8 +54,7 @@ def main() -> None:
     ax.set_xticks(x, metrics)
     ax.set_ylim(0, 1.18)
     ax.set_ylabel("归一化性能得分（越高越好）")
-    ax.set_title("单卡性能综合对比", fontsize=15, fontweight="bold", pad=8)
-    ax.legend(ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.25), frameon=False)
+    ax.legend(ncols=2, loc="upper center", bbox_to_anchor=(0.5, 1.14), frameon=False)
 
     raw_labels = np.column_stack(
         [
@@ -78,16 +77,7 @@ def main() -> None:
                 fontsize=9.8,
             )
 
-    ax.text(
-        0.03,
-        0.10,
-        "完整优化在吞吐、尾延迟、PCIe 往返和 GPU 利用率上均占优",
-        transform=ax.transAxes,
-        fontsize=10.8,
-        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#EEF7EA", "edgecolor": "#82B366"},
-    )
-
-    fig.tight_layout(rect=(0, 0, 1, 0.86))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(OUT_PATH, bbox_inches="tight")
     plt.close(fig)
 
