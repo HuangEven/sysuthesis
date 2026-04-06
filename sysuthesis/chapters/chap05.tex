@@ -105,46 +105,48 @@
   \caption{控制面/数据面职责与关键参数}
   \label{tab:control-vs-data-plane}
   \centering
-  \small
+  \footnotesize
+  \setlength{\tabcolsep}{2.8pt}
+  \renewcommand{\arraystretch}{1.18}
   \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{p{1.8cm}p{2.8cm}p{3.8cm}p{3.4cm}p{4.2cm}}
+    \begin{tabular}{p{1.45cm}p{2.35cm}p{3.2cm}p{3.4cm}p{4.95cm}}
       \toprule
       类别 & 组件 & 职责 & 关键参数 & 备注 \\
       \midrule
       控制面 &
-      请求队列与 batching 调度器 &
+      \makecell[l]{请求队列与\\batching 调度器} &
       统一接收请求、执行 bounded batching、形成微批并决定批次进入时机 &
-      \texttt{batch\_size}、\texttt{micro\_batch\_timeout\_ms}、\texttt{max\_inflight\_batches} &
+      \makecell[l]{\texttt{batch\_size}\\\texttt{micro\_batch\_timeout\_ms}\\\texttt{max\_inflight\_batches}} &
       直接决定吞吐与平均延迟的折中；CPU 只负责批次组织，不接收大规模候选集合 \\
       \midrule
       控制面 &
       GPU 负载均衡器 &
       根据 GPU 空闲度、队列深度和显存水位把微批动态分配到不同设备 &
-      \texttt{queue\_depth\_threshold}、\texttt{gpu\_mem\_watermark\_pct}、\texttt{dispatch\_window} &
+      \makecell[l]{\texttt{queue\_depth\_threshold}\\\texttt{gpu\_mem\_watermark\_pct}\\\texttt{dispatch\_window}} &
       优先保持各卡负载平衡并控制尾延迟；适用于 replicated 主路径 \\
       \midrule
       数据平面 &
-      FlashANNS / FAISS-GPU 候选召回后端 &
+      \makecell[l]{FlashANNS /\\FAISS-GPU 候选召回后端} &
       在设备侧完成向量检索、候选筛选和局部 top-$k$ 组织 &
-      \texttt{nprobe}、\texttt{candidate\_k}、\texttt{search\_stream\_count} &
+      \makecell[l]{\texttt{nprobe}\\\texttt{candidate\_k}\\\texttt{search\_stream\_count}} &
       每张 GPU 独立执行本地召回；与单卡阶段的 GPU 常驻链路保持一致 \\
       \midrule
       数据平面 &
       PyTOD 评分执行器 &
       对候选集合执行张量化异常评分、局部排序和最终分数输出 &
-      \texttt{score\_batch\_size}、\texttt{k}、\texttt{score\_stream\_priority} &
+      \makecell[l]{\texttt{score\_batch\_size}\\\texttt{k}\\\texttt{score\_stream\_priority}} &
       分数、排序结果和必要日志元信息留在设备侧直至最终输出 \\
       \midrule
       通信 &
       NCCL 归并与通信流 &
       在 sharded 兜底路径中完成 all-gather / reduce / merge 等设备间结果合并 &
-      \texttt{nccl\_op}、\texttt{merge\_chunk\_size}、\texttt{comm\_stream\_priority} &
+      \makecell[l]{\texttt{nccl\_op}\\\texttt{merge\_chunk\_size}\\\texttt{comm\_stream\_priority}} &
       仅在 replicated 失效时启用；需避免在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream \\
       \midrule
       I/O &
-      I/O 队列与 lane 准入控制器 &
+      \makecell[l]{I/O 队列与 lane\\准入控制器} &
       管理 SSD 读队列、GPU--SSD lane 绑定和 in-flight I/O 数量，抑制共享路径拥塞 &
-      \texttt{io\_queue\_depth}、\texttt{max\_inflight\_io}、\texttt{lane\_tokens\_per\_gpu} &
+      \makecell[l]{\texttt{io\_queue\_depth}\\\texttt{max\_inflight\_io}\\\texttt{lane\_tokens\_per\_gpu}} &
       与拓扑感知绑定策略联动；参数过大时会拉高 p99，过小则会限制吞吐 \\
       \bottomrule
     \end{tabular}
