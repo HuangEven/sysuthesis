@@ -48,11 +48,11 @@
   \caption{单卡主要瓶颈与对应优化项}
   \label{tab:single-gpu-bottlenecks}
   \centering
-  \small
-  \setlength{\tabcolsep}{3.5pt}
-  \renewcommand{\arraystretch}{1.22}
+  \footnotesize
+  \setlength{\tabcolsep}{2.8pt}
+  \renewcommand{\arraystretch}{1.20}
   \begin{adjustbox}{max width=0.98\linewidth}
-    \begin{tabular}{p{2.0cm}p{2.2cm}p{2.4cm}p{3.0cm}p{2.3cm}p{2.5cm}}
+    \begin{tabular}{p{1.75cm}p{1.95cm}p{2.15cm}p{2.65cm}p{2.95cm}p{2.95cm}}
       \toprule
       瓶颈类型 & 发生位置 & 主要影响 & 对应优化方案 & 涉及组件 & 预期收益 \\
       \midrule
@@ -60,29 +60,29 @@
       查询准备、候选输出与评分结果边界 &
       放大 H2D/D2H 次数，增加同步等待与尾延迟 &
       GPU 主导执行链路，边界处结合 pinned memory 做必要交换 &
-      \makecell[l]{RAPIDS/cuDF\\PyTOD\\RMM pinned memory} &
-      降低跨设备往返频次，压缩 p99 延迟并提高端到端吞吐 \\
+      \makecell[l]{RAPIDS/cuDF\\PyTOD\\RMM pinned\\memory} &
+      \makecell[l]{降低跨设备往返频次，\\压缩 p99 延迟并提高\\端到端吞吐} \\
       \midrule
       候选重组开销 &
       候选召回到异常评分的接口边界 &
       主机侧 pack\_candidates、序列化和重建成本高 &
       采用 device-resident candidate buffer 和统一张量交接接口 &
       \makecell[l]{FlashANNS\\FAISS-GPU\\PyTOD} &
-      缩短候选打包阶段，避免 CPU 重新成为数据平面瓶颈 \\
+      \makecell[l]{缩短候选打包阶段，\\避免 CPU 重新成为\\数据平面瓶颈} \\
       \midrule
       I/O 串行等待 &
       SSD 读页、ANN 图扩展与局部距离计算之间 &
       GPU 空转等待数据，召回吞吐受限 &
       异步 I/O 重叠、双缓冲和流级并行推进 &
       \makecell[l]{FlashANNS\\NVMe SSD\\CUDA streams} &
-      隐藏部分读页等待，提高候选召回有效吞吐与 GPU 忙碌度 \\
+      \makecell[l]{隐藏部分读页等待，\\提高候选召回有效吞吐\\与 GPU 忙碌度} \\
       \midrule
       资源分配抖动 &
       临时缓冲区、scratch memory 与主机交换缓冲 &
       频繁分配释放导致延迟抖动和显存碎片 &
       内存池复用、scratch 预分配与微批双缓冲 &
-      \makecell[l]{FAISS \texttt{GpuResources}\\RMM memory pool\\CUDA streams} &
-      稳定阶段延迟，降低 allocation overhead，改善资源利用率 \\
+      \makecell[l]{FAISS\\\texttt{GpuResources}\\RMM memory\\pool\\CUDA streams} &
+      \makecell[l]{稳定阶段延迟，降低\\allocation overhead，\\改善资源利用率} \\
       \bottomrule
     \end{tabular}
   \end{adjustbox}
