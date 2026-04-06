@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import fill
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,6 +12,10 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["axes.unicode_minus"] = False
 
 SCHEME_COLORS = ["#FFFFFF", "#D1D1D1", "#A8A8A8", "#6E6E6E"]
+
+
+def wrapped_labels(values: pd.Series, width: int = 16) -> list[str]:
+    return [fill(str(item), width=width, break_long_words=False) for item in values]
 
 
 def style_axes(ax: plt.Axes) -> None:
@@ -30,8 +35,10 @@ def main() -> None:
         ("gpu_util", "GPU Utilization (%)", (0, 95), 1.4),
     ]
 
-    fig, axes = plt.subplots(2, 2, figsize=(10.4, 6.4), dpi=220)
+    fig, axes = plt.subplots(2, 2, figsize=(11.2, 6.8), dpi=220)
     axes = axes.flatten()
+    display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    tick_labels = wrapped_labels(display)
 
     for ax, (column, ylabel, ylim, offset) in zip(axes, metrics):
         bars = ax.bar(
@@ -42,8 +49,8 @@ def main() -> None:
             linewidth=0.9,
             width=0.68,
         )
-        ax.set_xticks(range(len(df)), df["scheme"].values)
-        ax.set_xlabel("Schemes", fontsize=13)
+        ax.set_xticks(range(len(df)), tick_labels)
+        ax.set_xlabel("Execution scenarios", fontsize=13)
         ax.set_ylabel(ylabel, fontsize=13)
         ax.set_ylim(*ylim)
         style_axes(ax)

@@ -15,12 +15,13 @@ plt.rcParams["axes.unicode_minus"] = False
 
 def build_matrix(df: pd.DataFrame, value_col: str) -> tuple[list[int], list[str], np.ndarray]:
     gpu_groups = list(dict.fromkeys(df["gpu_count"].tolist()))
-    schemes = list(dict.fromkeys(df["scheme"].tolist()))
+    label_column = "scheme_desc" if "scheme_desc" in df.columns else "scheme"
+    schemes = list(dict.fromkeys(df[label_column].tolist()))
     matrix = np.zeros((len(gpu_groups), len(schemes)))
 
     for i, gpu_count in enumerate(gpu_groups):
         for j, scheme in enumerate(schemes):
-            row = df[(df["gpu_count"] == gpu_count) & (df["scheme"] == scheme)].iloc[0]
+            row = df[(df["gpu_count"] == gpu_count) & (df[label_column] == scheme)].iloc[0]
             matrix[i, j] = float(row[value_col])
 
     return gpu_groups, schemes, matrix

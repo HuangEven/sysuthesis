@@ -7,14 +7,20 @@ out_path = fullfile(root_dir, 'fig5_18_io_lane_impact.png');
 
 tbl = readtable(csv_path, 'TextType', 'string');
 gpu_groups = unique(tbl.gpu_count, 'stable');
-schemes = unique(tbl.scheme, 'stable');
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    schemes = unique(tbl.scheme_desc, 'stable');
+    scheme_field = "scheme_desc";
+else
+    schemes = unique(tbl.scheme, 'stable');
+    scheme_field = "scheme";
+end
 
 qps_values = zeros(numel(gpu_groups), numel(schemes));
 p99_values = zeros(numel(gpu_groups), numel(schemes));
 
 for i = 1:numel(gpu_groups)
     for j = 1:numel(schemes)
-        mask = tbl.gpu_count == gpu_groups(i) & tbl.scheme == schemes(j);
+        mask = tbl.gpu_count == gpu_groups(i) & tbl.(scheme_field) == schemes(j);
         qps_values(i, j) = tbl.qps(mask);
         p99_values(i, j) = tbl.p99_ms(mask);
     end

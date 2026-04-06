@@ -1,4 +1,4 @@
 scheme,scheme_desc,avg_latency_ms,p99_latency_ms
-Scheme 1,Replicated,8.40,12.90
-Scheme 2,Local scoring + CPU aggregation,15.80,28.60
-Scheme 3,Local scoring + GPU merge,11.60,19.40
+Replicated path,Replicated primary path,8.40,12.90
+CPU aggregation,CPU-side aggregation fallback,15.80,28.60
+GPU merge,GPU-side merge fallback,11.60,19.40

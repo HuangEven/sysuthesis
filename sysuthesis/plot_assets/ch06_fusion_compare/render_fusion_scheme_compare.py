@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import fill
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,6 +12,10 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["axes.unicode_minus"] = False
 
 
+def wrapped_labels(values: pd.Series, width: int = 16) -> list[str]:
+    return [fill(str(item), width=width, break_long_words=False) for item in values]
+
+
 def apply_axis_style(ax: plt.Axes) -> None:
     ax.set_axisbelow(True)
     ax.grid(axis="y", linestyle="--", linewidth=0.7, color="#B8B8B8", alpha=0.45)
@@ -20,11 +25,12 @@ def apply_axis_style(ax: plt.Axes) -> None:
 
 
 def render_accuracy(df: pd.DataFrame) -> None:
-    labels = ["Full", "Recall", "Initial", "Fusion"]
+    display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    labels = wrapped_labels(display)
     fig, ax = plt.subplots(figsize=(7.6, 5.0), dpi=220)
     bars = ax.bar(range(len(df)), df["pr_auc"], color="white", edgecolor="black", linewidth=1.2)
     ax.set_xticks(range(len(df)), labels)
-    ax.set_xlabel("Schemes", fontsize=13)
+    ax.set_xlabel("Validation scenarios", fontsize=13)
     ax.set_ylabel("PR-AUC", fontsize=13)
     ax.set_ylim(0.75, 0.96)
     apply_axis_style(ax)
@@ -36,11 +42,12 @@ def render_accuracy(df: pd.DataFrame) -> None:
 
 
 def render_qps(df: pd.DataFrame) -> None:
-    labels = ["Full", "Recall", "Initial", "Fusion"]
+    display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    labels = wrapped_labels(display)
     fig, ax = plt.subplots(figsize=(7.6, 5.0), dpi=220)
     bars = ax.bar(range(len(df)), df["qps"], color="#D1D1D1", edgecolor="black", linewidth=1.2)
     ax.set_xticks(range(len(df)), labels)
-    ax.set_xlabel("Schemes", fontsize=13)
+    ax.set_xlabel("Validation scenarios", fontsize=13)
     ax.set_ylabel("QPS", fontsize=13)
     ax.set_ylim(0, 10800)
     apply_axis_style(ax)
@@ -65,7 +72,7 @@ def render_tradeoff(df: pd.DataFrame) -> None:
             markersize=7.5,
             markerfacecolor="white",
             linewidth=1.4,
-            label=row["scheme"],
+            label=row["scheme_desc"] if "scheme_desc" in df.columns else row["scheme"],
         )
         ax.text(row["qps"] + 120, row["pr_auc"] + 0.0012, f"{row['pr_auc']:.4f} / {row['qps']:.2f}", fontsize=9.2)
     ax.set_xlabel("QPS", fontsize=13)

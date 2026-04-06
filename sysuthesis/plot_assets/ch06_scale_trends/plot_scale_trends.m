@@ -6,7 +6,13 @@ csv_path = fullfile(root_dir, 'scale_trends.csv');
 out_path = fullfile(root_dir, 'fig6_8_scale_trends.png');
 
 tbl = readtable(csv_path, 'TextType', 'string');
-schemes = unique(tbl.scheme, 'stable');
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    schemes = unique(tbl.scheme_desc, 'stable');
+    scheme_field = "scheme_desc";
+else
+    schemes = unique(tbl.scheme, 'stable');
+    scheme_field = "scheme";
+end
 scale_labels = {'1M', '10M', '50M', '100M'};
 metrics = {'qps', 'p99_latency_ms', 'pr_auc'};
 ylabels = {'QPS', 'Latency (ms)', 'PR-AUC'};
@@ -21,7 +27,7 @@ for m = 1:numel(metrics)
     ax = nexttile;
     hold(ax, 'on');
     for s = 1:numel(schemes)
-        subset = tbl(tbl.scheme == schemes(s), :);
+        subset = tbl(tbl.(scheme_field) == schemes(s), :);
         plot(ax, 1:height(subset), subset.(metrics{m}), ...
             'Color', 'k', ...
             'LineStyle', line_styles{s}, ...

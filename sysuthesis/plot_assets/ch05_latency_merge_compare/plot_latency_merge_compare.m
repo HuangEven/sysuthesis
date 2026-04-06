@@ -32,10 +32,15 @@ ax.GridColor = [0.72, 0.72, 0.72];
 ax.GridAlpha = 0.35;
 
 xticks(ax, 1:height(tbl));
-xticklabels(ax, tbl.scheme);
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    display_labels = wrap_labels(tbl.scheme_desc);
+else
+    display_labels = wrap_labels(tbl.scheme);
+end
+xticklabels(ax, display_labels);
 ylim(ax, [0, 32]);
 
-xlabel(ax, 'Schemes', 'FontName', 'Times New Roman', 'FontSize', 13);
+xlabel(ax, 'Merge scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax, 'Latency (ms)', 'FontName', 'Times New Roman', 'FontSize', 13);
 legend(ax, {'Average', 'p99'}, 'Location', 'northwest', 'Box', 'off', 'FontName', 'Times New Roman');
 
@@ -53,4 +58,17 @@ end
 
 exportgraphics(fig, out_path, 'Resolution', 220);
 close(fig);
+end
+
+function labels = wrap_labels(values)
+labels = cell(size(values));
+for i = 1:numel(values)
+    words = split(string(values(i)));
+    if numel(words) <= 2
+        labels{i} = char(join(words, newline));
+    else
+        mid = ceil(numel(words) / 2);
+        labels{i} = char(join(words(1:mid), " ") + newline + join(words(mid+1:end), " "));
+    end
+end
 end

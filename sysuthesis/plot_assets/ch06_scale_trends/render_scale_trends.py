@@ -46,7 +46,8 @@ def main() -> None:
     fig, axes = plt.subplots(1, 3, figsize=(10.8, 4.2), dpi=220)
 
     for ax, (metric, ylabel, ylim) in zip(axes, metrics):
-        for idx, (scheme, subset) in enumerate(df.groupby("scheme", sort=False)):
+        label_column = "scheme_desc" if "scheme_desc" in df.columns else "scheme"
+        for idx, (scheme, subset) in enumerate(df.groupby(label_column, sort=False)):
             subset = subset.reset_index(drop=True)
             ax.plot(
                 range(len(subset)),
@@ -57,7 +58,7 @@ def main() -> None:
                 marker=markers[idx],
                 markersize=6.6,
                 markerfacecolor="white",
-                label=scheme,
+                label=str(scheme),
             )
             for x, value in enumerate(subset[metric]):
                 ax.text(x, value + metric_offset(metric), metric_format(metric) % value, ha="center", va="bottom", fontsize=9.2)

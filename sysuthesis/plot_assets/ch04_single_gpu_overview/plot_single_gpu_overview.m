@@ -17,8 +17,14 @@ scheme_colors = [
     0.42, 0.42, 0.42
 ];
 
-fig = figure('Color', 'w', 'Position', [120, 120, 1040, 640]);
+fig = figure('Color', 'w', 'Position', [120, 120, 1120, 680]);
 tiledlayout(fig, 2, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
+
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    display_labels = wrap_labels(tbl.scheme_desc);
+else
+    display_labels = wrap_labels(tbl.scheme);
+end
 
 for i = 1:numel(metric_fields)
     ax = nexttile;
@@ -37,9 +43,9 @@ for i = 1:numel(metric_fields)
     ax.TickDir = 'out';
 
     xticks(ax, 1:height(tbl));
-    xticklabels(ax, tbl.scheme);
+    xticklabels(ax, display_labels);
     xtickangle(ax, 0);
-    xlabel(ax, 'Schemes', 'FontName', 'Times New Roman', 'FontSize', 13);
+    xlabel(ax, 'Execution scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
     ylabel(ax, metric_labels{i}, 'FontName', 'Times New Roman', 'FontSize', 13);
     ylim(ax, metric_limits(i, :));
 
@@ -54,4 +60,17 @@ end
 
 exportgraphics(fig, out_path, 'Resolution', 220);
 close(fig);
+end
+
+function labels = wrap_labels(values)
+labels = cell(size(values));
+for i = 1:numel(values)
+    words = split(string(values(i)));
+    if numel(words) <= 2
+        labels{i} = char(join(words, newline));
+    else
+        mid = ceil(numel(words) / 2);
+        labels{i} = char(join(words(1:mid), " ") + newline + join(words(mid+1:end), " "));
+    end
+end
 end

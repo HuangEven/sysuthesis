@@ -4,8 +4,13 @@ function plot_fusion_scheme_compare()
 root_dir = fileparts(mfilename('fullpath'));
 csv_path = fullfile(root_dir, 'fusion_scheme_compare.csv');
 tbl = readtable(csv_path, 'TextType', 'string');
-
-scheme_labels = {'Full', 'Recall', 'Initial', 'Fusion'};
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    scheme_labels = wrap_labels(tbl.scheme_desc);
+    legend_labels = cellstr(tbl.scheme_desc);
+else
+    scheme_labels = wrap_labels(tbl.scheme);
+    legend_labels = cellstr(tbl.scheme);
+end
 
 % 图6-4：PR-AUC 对比
 fig1 = figure('Color', 'w', 'Position', [120, 120, 760, 500]);
@@ -14,7 +19,7 @@ bar(ax1, tbl.pr_auc, 'FaceColor', [1 1 1], 'EdgeColor', [0 0 0], 'LineWidth', 1.
 apply_axis_style(ax1);
 xticks(ax1, 1:height(tbl));
 xticklabels(ax1, scheme_labels);
-xlabel(ax1, 'Schemes', 'FontName', 'Times New Roman', 'FontSize', 13);
+xlabel(ax1, 'Validation scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax1, 'PR-AUC', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylim(ax1, [0.75, 0.96]);
 annotate_single_series(ax1, tbl.pr_auc, 0.006, '%.4f');
@@ -28,7 +33,7 @@ bar(ax2, tbl.qps, 'FaceColor', [0.82 0.82 0.82], 'EdgeColor', [0 0 0], 'LineWidt
 apply_axis_style(ax2);
 xticks(ax2, 1:height(tbl));
 xticklabels(ax2, scheme_labels);
-xlabel(ax2, 'Schemes', 'FontName', 'Times New Roman', 'FontSize', 13);
+xlabel(ax2, 'Validation scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax2, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylim(ax2, [0, 10800]);
 annotate_single_series(ax2, tbl.qps, 260, '%.2f');
@@ -49,9 +54,22 @@ for i = 1:height(tbl)
         'MarkerSize', 7.5, ...
         'MarkerFaceColor', 'w', ...
         'LineWidth', 1.4, ...
-        'DisplayName', tbl.scheme(i));
+        'DisplayName', legend_labels{i});
     text(tbl.qps(i) + 120, tbl.pr_auc(i) + 0.0012, sprintf('%.4f / %.2f', tbl.pr_auc(i), tbl.qps(i)), ...
         'FontName', 'Times New Roman', 'FontSize', 9.6);
+end
+
+function labels = wrap_labels(values)
+labels = cell(size(values));
+for i = 1:numel(values)
+    words = split(string(values(i)));
+    if numel(words) <= 2
+        labels{i} = char(join(words, newline));
+    else
+        mid = ceil(numel(words) / 2);
+        labels{i} = char(join(words(1:mid), " ") + newline + join(words(mid+1:end), " "));
+    end
+end
 end
 apply_axis_style(ax3);
 xlabel(ax3, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);

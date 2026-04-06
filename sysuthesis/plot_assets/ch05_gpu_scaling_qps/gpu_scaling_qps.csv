@@ -1,4 +1,4 @@
-scheme,gpu_count,qps
-Scheme 1,1,12640.00
-Scheme 1,2,24760.00
-Scheme 1,4,47620.00
+scheme,scheme_desc,gpu_count,qps
+Replicated path,Replicated primary path,1,12640.00
+Replicated path,Replicated primary path,2,24760.00
+Replicated path,Replicated primary path,4,47620.00

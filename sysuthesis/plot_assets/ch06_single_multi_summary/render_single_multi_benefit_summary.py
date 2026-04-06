@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import fill
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,6 +13,10 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["axes.unicode_minus"] = False
 
 
+def wrapped_labels(values: pd.Series, width: int = 16) -> list[str]:
+    return [fill(str(item), width=width, break_long_words=False) for item in values]
+
+
 def style_axes(ax: plt.Axes) -> None:
     ax.set_axisbelow(True)
     ax.grid(axis="y", linestyle="--", linewidth=0.7, color="#B8B8B8", alpha=0.45)
@@ -22,19 +27,20 @@ def style_axes(ax: plt.Axes) -> None:
 
 def main() -> None:
     df = pd.read_csv(CSV_PATH)
-    labels = ["Orig.", "Single", "2 GPU", "4 GPU"]
+    display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    labels = wrapped_labels(display)
     metrics = [
         ("qps", "QPS", (0, 52000), 850, "white"),
         ("p99_latency_ms", "Latency (ms)", (0, 75), 1.2, "#D1D1D1"),
         ("cpu_util", "CPU Utilization (%)", (0, 70), 1.0, "#A6A6A6"),
     ]
 
-    fig, axes = plt.subplots(1, 3, figsize=(10.8, 4.2), dpi=220)
+    fig, axes = plt.subplots(1, 3, figsize=(11.6, 4.6), dpi=220)
 
     for ax, (column, ylabel, ylim, offset, color) in zip(axes, metrics):
         bars = ax.bar(range(len(df)), df[column], color=color, edgecolor="black", linewidth=1.2)
         ax.set_xticks(range(len(df)), labels)
-        ax.set_xlabel("Schemes", fontsize=13)
+        ax.set_xlabel("Validation scenarios", fontsize=13)
         ax.set_ylabel(ylabel, fontsize=13)
         ax.set_ylim(*ylim)
         style_axes(ax)

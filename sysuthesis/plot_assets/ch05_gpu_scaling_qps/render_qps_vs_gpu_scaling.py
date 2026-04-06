@@ -14,14 +14,15 @@ plt.rcParams["axes.unicode_minus"] = False
 
 def main() -> None:
     df = pd.read_csv(CSV_PATH)
-    schemes = list(dict.fromkeys(df["scheme"].tolist()))
+    label_column = "scheme_desc" if "scheme_desc" in df.columns else "scheme"
+    schemes = list(dict.fromkeys(df[label_column].tolist()))
     line_styles = ["-", "--", "-.", ":"]
     markers = ["o", "s", "^", "d"]
 
     fig, ax = plt.subplots(figsize=(8.6, 5.2), dpi=220)
 
     for idx, scheme in enumerate(schemes):
-        subset = df[df["scheme"] == scheme].sort_values("gpu_count")
+        subset = df[df[label_column] == scheme].sort_values("gpu_count")
         ax.plot(
             subset["gpu_count"],
             subset["qps"],
@@ -31,7 +32,7 @@ def main() -> None:
             marker=markers[min(idx, len(markers) - 1)],
             markersize=6.8,
             markerfacecolor="white",
-            label=scheme,
+            label=str(scheme),
         )
 
         for x, y in zip(subset["gpu_count"], subset["qps"]):

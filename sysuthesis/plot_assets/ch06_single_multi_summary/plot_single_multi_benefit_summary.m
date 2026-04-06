@@ -6,13 +6,17 @@ csv_path = fullfile(root_dir, 'single_multi_benefit_summary.csv');
 out_path = fullfile(root_dir, 'fig6_7_single_multi_summary.png');
 
 tbl = readtable(csv_path, 'TextType', 'string');
-labels = {'Orig.', 'Single', '2 GPU', '4 GPU'};
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    labels = wrap_labels(tbl.scheme_desc);
+else
+    labels = wrap_labels(tbl.scheme);
+end
 metrics = {'QPS', 'Latency (ms)', 'CPU Utilization (%)'};
 values = [tbl.qps, tbl.p99_latency_ms, tbl.cpu_util];
 offsets = [850, 1.2, 1.0];
 y_lims = [0 52000; 0 75; 0 70];
 
-fig = figure('Color', 'w', 'Position', [120, 120, 1080, 420]);
+fig = figure('Color', 'w', 'Position', [120, 120, 1160, 460]);
 tiledlayout(fig, 1, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
 
 for i = 1:3
@@ -28,7 +32,7 @@ for i = 1:3
     apply_axis_style(ax);
     xticks(ax, 1:height(tbl));
     xticklabels(ax, labels);
-    xlabel(ax, 'Schemes', 'FontName', 'Times New Roman', 'FontSize', 13);
+    xlabel(ax, 'Validation scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
     ylabel(ax, metrics{i}, 'FontName', 'Times New Roman', 'FontSize', 13);
     ylim(ax, y_lims(i, :));
     for j = 1:numel(bars.YData)
@@ -40,6 +44,19 @@ end
 
 exportgraphics(fig, out_path, 'Resolution', 220);
 close(fig);
+end
+
+function labels = wrap_labels(values)
+labels = cell(size(values));
+for i = 1:numel(values)
+    words = split(string(values(i)));
+    if numel(words) <= 2
+        labels{i} = char(join(words, newline));
+    else
+        mid = ceil(numel(words) / 2);
+        labels{i} = char(join(words(1:mid), " ") + newline + join(words(mid+1:end), " "));
+    end
+end
 end
 
 function apply_axis_style(ax)

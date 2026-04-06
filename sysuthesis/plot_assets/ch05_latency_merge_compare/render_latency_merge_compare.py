@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import fill
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +12,10 @@ OUT_PATH = ROOT / "fig5_16_latency_merge_compare.png"
 
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["axes.unicode_minus"] = False
+
+
+def wrapped_labels(values: pd.Series, width: int = 18) -> list[str]:
+    return [fill(str(item), width=width, break_long_words=False) for item in values]
 
 
 def main() -> None:
@@ -40,9 +45,10 @@ def main() -> None:
         linewidth=1.2,
     )
 
-    ax.set_xticks(x, df["scheme"])
+    display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    ax.set_xticks(x, wrapped_labels(display))
     ax.set_ylim(0, 32)
-    ax.set_xlabel("Schemes", fontsize=13)
+    ax.set_xlabel("Merge scenarios", fontsize=13)
     ax.set_ylabel("Latency (ms)", fontsize=13)
     ax.set_axisbelow(True)
     ax.grid(axis="y", linestyle="--", linewidth=0.7, color="#B8B8B8", alpha=0.45)

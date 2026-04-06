@@ -1,9 +1,9 @@
 scheme,scheme_desc,data_scale,qps,p99_latency_ms,pr_auc
-Scheme 1,Baseline,1M,1850.00,31.00,0.9320
-Scheme 1,Baseline,10M,920.00,45.00,0.9280
-Scheme 1,Baseline,50M,340.00,73.00,0.9250
-Scheme 1,Baseline,100M,180.00,108.00,0.9220
-Scheme 2,Full fusion,1M,9680.00,12.80,0.9310
-Scheme 2,Full fusion,10M,6420.00,19.40,0.9290
-Scheme 2,Full fusion,50M,3180.00,33.70,0.9270
-Scheme 2,Full fusion,100M,1820.00,49.80,0.9240
+Full-scoring baseline,Full-scoring baseline,1M,1850.00,31.00,0.9320
+Full-scoring baseline,Full-scoring baseline,10M,920.00,45.00,0.9280
+Full-scoring baseline,Full-scoring baseline,50M,340.00,73.00,0.9250
+Full-scoring baseline,Full-scoring baseline,100M,180.00,108.00,0.9220
+Full fusion pipeline,Full fusion pipeline,1M,9680.00,12.80,0.9310
+Full fusion pipeline,Full fusion pipeline,10M,6420.00,19.40,0.9290
+Full fusion pipeline,Full fusion pipeline,50M,3180.00,33.70,0.9270
+Full fusion pipeline,Full fusion pipeline,100M,1820.00,49.80,0.9240

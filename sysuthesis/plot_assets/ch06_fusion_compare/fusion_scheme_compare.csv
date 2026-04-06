@@ -1,5 +1,5 @@
 scheme,scheme_desc,pr_auc,qps
-Scheme 1,Full scoring,0.9370,1520.00
-Scheme 2,Recall-only,0.8010,4380.00
-Scheme 3,Initial fusion,0.9190,5120.00
-Scheme 4,Full fusion,0.9310,9680.00
+Full scoring,Full-scoring baseline,0.9370,1520.00
+Recall-only,Recall-only screening,0.8010,4380.00
+Initial fusion,Initial fusion pipeline,0.9190,5120.00
+Full fusion,Full fusion pipeline,0.9310,9680.00

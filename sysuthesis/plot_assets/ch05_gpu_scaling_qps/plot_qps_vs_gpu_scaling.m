@@ -6,7 +6,13 @@ csv_path = fullfile(root_dir, 'gpu_scaling_qps.csv');
 out_path = fullfile(root_dir, 'fig5_15_qps_vs_gpu.png');
 
 tbl = readtable(csv_path, 'TextType', 'string');
-schemes = unique(tbl.scheme, 'stable');
+if any(strcmp('scheme_desc', tbl.Properties.VariableNames))
+    schemes = unique(tbl.scheme_desc, 'stable');
+    scheme_field = "scheme_desc";
+else
+    schemes = unique(tbl.scheme, 'stable');
+    scheme_field = "scheme";
+end
 
 fig = figure('Color', 'w', 'Position', [120, 120, 860, 520]);
 ax = axes(fig);
@@ -16,7 +22,7 @@ line_styles = {'-', '--', '-.', ':'};
 markers = {'o', 's', '^', 'd'};
 
 for i = 1:numel(schemes)
-    mask = tbl.scheme == schemes(i);
+    mask = tbl.(scheme_field) == schemes(i);
     x = tbl.gpu_count(mask);
     y = tbl.qps(mask);
 

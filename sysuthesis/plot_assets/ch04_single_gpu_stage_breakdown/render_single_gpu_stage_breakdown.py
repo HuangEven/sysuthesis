@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import fill
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +10,13 @@ ROOT = Path(__file__).resolve().parent
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["axes.unicode_minus"] = False
 STAGES = ["query_prep", "ann_recall", "pack_candidates", "pytod_score", "output"]
+STAGE_LABELS = {
+    "query_prep": "Query prep",
+    "ann_recall": "ANN recall",
+    "pack_candidates": "Candidate pack",
+    "pytod_score": "PyTOD score",
+    "output": "Output",
+}
 COLORS = ["#FFFFFF", "#DBDBDB", "#B9B9B9", "#949494", "#666666"]
 HATCHES = ["", "//", "\\\\", "xx", ".."]
 DATASETS = [
@@ -21,6 +29,10 @@ DATASETS = [
         ROOT / "fig4_15_single_gpu_stage_breakdown_10m.png",
     ),
 ]
+
+
+def wrapped_labels(values: pd.Series, width: int = 18) -> list[str]:
+    return [fill(str(item), width=width, break_long_words=False) for item in values]
 
 
 def render(csv_path: Path, out_path: Path) -> None:
@@ -37,7 +49,7 @@ def render(csv_path: Path, out_path: Path) -> None:
             df[stage].values,
             width,
             bottom=bottom,
-            label=stage,
+            label=STAGE_LABELS[stage],
             color=color,
             edgecolor="black",
             linewidth=0.8,
@@ -52,8 +64,9 @@ def render(csv_path: Path, out_path: Path) -> None:
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.tick_params(direction="out", width=1.0, labelsize=12)
-    ax.set_xticks(x, df["scheme"].values)
-    ax.set_xlabel("Schemes", fontsize=13)
+    display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    ax.set_xticks(x, wrapped_labels(display))
+    ax.set_xlabel("Execution scenarios", fontsize=13)
     ax.set_ylabel("Latency (ms)", fontsize=13)
     ax.legend(
         ncols=3,
