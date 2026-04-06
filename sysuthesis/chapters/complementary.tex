@@ -1,16 +1,40 @@
 % !TEX root = ../main.tex
 
-\chapter{实验脚本与日志模板}
+\chapter{实验脚本与日志归档说明}
 
-本附录在正式版中应补充关键脚本入口、命令行参数模板、日志字段样例与目录组织方式，以支撑“统一脚本、统一日志、统一口径”的研究方法。相关脚本与复核记录可与内部材料统一维护和版本化管理\citep{internal2026record}。
+本附录结合现有实验脚本与历史运行记录，对论文中各验证阶段所对应的脚本入口、日志归档方式和参数组织口径作统一说明。目的不是列出全部内部文件，而是将正文中需要复核的单卡、多 GPU、真实集有效性和论文出图阶段，整理为可复用的一套归档规范\citep{internal2026record}。
 
-\section{待补充内容}
+\section{实验阶段与材料对应关系}
+
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.22\textwidth}>{\raggedright\arraybackslash}p{0.29\textwidth}>{\raggedright\arraybackslash}X}
+论文验证阶段 & 代表性脚本或日志前缀 & 主要用途 \\
+真实集路径检查与冒烟验证 & \path|freeze_last_tune_<ts>/01_*| & 对真实集输入路径、基础运行链路和候选召回---评分接口进行快速联调，对应正文中的真实集有效性验证起点。 \\
+真实集校准与配置筛选 & \path|freeze_last_tune_<ts>/02_*| & 保存校准轮次的标准输出、排序摘要和配置对比结果，用于冻结论文定稿前的候选规模与评分配置。 \\
+单卡链路对比与阶段耗时分析 & \path|bench_flash_<scale>_<scene>_gpu<id>.log|、\path|compare_<topic>_<ts>.md| & 对应第四章单卡路径优化实验，重点记录原始链路、召回加速、GPU 主导链路和完整优化方案之间的耗时与吞吐差异。 \\
+多 GPU 扩展、归并与冲突对比 & \path|bench_flash_<scale>_replica_*|、\path|*_shard_*|、\path|gpu_<topic>_gpu<id>.csv| & 对应第五章 replicated 主方案、GPU merge 兜底路径、CPU aggregation 对比基线以及共享路径冲突实验。 \\
+论文图表整理与结果汇总 & \path|latest_<topic>_paper/|、\path|chart_ready_*.csv|、\path|session_meta.txt| & 将多轮实验结果整理为论文图表输入数据，保留轮次汇总、出图口径与会话元信息。 \\
+\end{tabularx}
+\normalsize
+
+\section{统一文件命名风格}
 
 \begin{itemize}
-  \item 关键训练、建索引、查询与评测脚本入口。
-  \item 常用命令行参数模板与默认值说明。
-  \item 日志字段示例及字段解释。
-  \item 工程目录组织方式与结果归档规范。
+  \item 会话目录统一采用“任务名 + 时间戳”形式，例如 \path|freeze_last_tune_<YYYYmmdd_HHMMSS>|，用于标识一轮冻结前复核或专题实验。
+  \item 单次运行日志统一采用 \path|bench_<route>_<scale>_<scene>_gpu<id>.log|，其中 \texttt{route} 表示单卡或多卡执行路径，\texttt{scale} 表示数据规模，\texttt{scene} 表示验证场景或配置标签。
+  \item 对比结果统一采用 \path|compare_<topic>_<timestamp>.md| 与 \path|compare_<topic>_<timestamp>.csv| 成对保存，其中 Markdown 文件用于保留人工可读结论，CSV 文件用于后续绘图与表格汇总。
+  \item 过程检查类文件统一采用 \path|0N_<step>.prompt.txt|、\path|0N_<step>.stdout.log| 和 \path|checklist.log| 的组合形式，用于保留命令入口、标准输出和阶段性检查记录。
+  \item 出图目录统一保留 \path|all_rounds.csv|、\path|chart_ready_*.csv| 和 \path|session_meta.txt| 三类文件，分别对应原始轮次结果、绘图输入和会话说明。
+\end{itemize}
+
+\section{统一参数设置风格}
+
+\begin{itemize}
+  \item 数据与划分参数统一使用 \texttt{real-root}、\texttt{real-datasets}、\texttt{synthetic-root}、\texttt{synthetic-scales}、\texttt{input-npz}、\texttt{out-dir}、\texttt{seed} 等名称，明确区分真实集入口、合成集规模和数据切分位置。
+  \item 单卡热路径参数统一使用 \texttt{device}、\texttt{batch-size}、\texttt{score-chunk-size}、\texttt{warmup}、\texttt{repeats}、\texttt{max-run-seconds}，分别控制设备绑定、批大小、评分块大小、预热次数和单轮运行上限。
+  \item 候选召回与索引参数统一使用 \texttt{flash-search-k}、\texttt{flash-rerank-exact}、\texttt{flash-indices-only}、\texttt{faiss-index}、\texttt{faiss-nlist}、\texttt{faiss-nprobe}、\texttt{faiss-pq-m}、\texttt{faiss-pq-bits} 等名称，避免在不同脚本中混用语义相近的别名。
+  \item 多 GPU 相关参数统一使用 \texttt{gpu-list}、\texttt{flash-multi-gpu-route}、\texttt{flash-service-topology}、\texttt{flash-service-protocol}、\texttt{flash-multi-gpu-devices}、\texttt{flash-multi-gpu-gather-device}、\texttt{flash-shards}、\texttt{flash-service-batch-size}，明确区分 replicated 主路径、分片兜底路径和聚合位置。
+  \item 监控与分析参数统一使用 \texttt{gpu-log-path}、\texttt{gpu-log-interval-ms}、\texttt{chain-profile}、\texttt{trace-output-dir} 等名称；Shell 包装脚本中对应使用全大写环境变量，如 \texttt{BATCH\_SIZE}、\texttt{FLASH\_SEARCH\_K}，冻结配置则统一使用 \texttt{FREEZE\_*} 前缀。
 \end{itemize}
 
 
