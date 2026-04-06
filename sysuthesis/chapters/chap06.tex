@@ -10,7 +10,7 @@
 
 软件环境方面，实验系统由 PyTOD/TOD 评分实现、FlashANNS 候选召回模块、RAPIDS 数据处理组件、FAISS-GPU 检索后端增强组件以及多 GPU 通信和调度运行时共同组成。为了保证结果可复核，本文固定 Python、PyTorch、PyTOD、FAISS-GPU、CUDA、NCCL 以及操作系统版本，并把这些版本视为统一的软件环境快照。由于不同版本的 RAPIDS、FAISS-GPU 和 cuVS 在接口与性能行为上可能存在差异，本章不讨论“哪个版本更优”，而是以当前组合环境作为全文实验的共同基础\citep{cuvs_multi_gpu_nn,nccl_stream_semantics,gds_overview}。
 
-在实验分类上，本文将综合实验划分为三组：\textbf{方法有效性验证实验}，主要对应 1M 左右真实或半真实数据；\textbf{单卡系统性能实验}，主要关注端到端吞吐、延迟和资源利用；\textbf{多 GPU 扩展实验}，用于比较 replicated 主方案、GPU 侧归并兜底路径以及 I/O 路径组织方式。三类实验共享一套基础代码框架，但在数据规模、硬件使用方式和评价重点上各有分工。
+在实验分类上，本文将综合实验划分为三组：\textbf{方法有效性验证实验}，对应真实或半真实数据及 1M 合成桥接口径；\textbf{单卡系统性能实验}，规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据”组织；\textbf{多 GPU 扩展实验}，规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据 $\rightarrow$ 100M 合成数据”组织，用于比较 replicated 主方案、GPU 侧归并兜底路径以及 I/O 路径组织方式。三类实验共享一套基础代码框架，但在数据规模、硬件使用方式和评价重点上各有分工。
 
 表~\ref{tab:hw-config} 和表~\ref{tab:sw-config} 分别给出了硬件与软件环境快照，图~\ref{fig:exp-topology} 则补充展示了实验平台中 CPU、GPU、SSD 与 PCIe/NUMA 的连接关系，为后续性能差异解释提供硬件背景。
 
@@ -31,7 +31,7 @@
     PCIe 能力 & PCIe Gen4 $\times$16 & 8 张 GPU 均为 Gen4 $\times$16 \\
     本地存储 & 3 $\times$ NVMe SSD & 894.3\,GB $\times$ 2，3.5\,TB $\times$ 1，总约 5.29\,TB \\
     NUMA 拓扑 & 2 个 NUMA 节点 & NUMA 0 对应 GPU0--GPU3，NUMA 1 对应 GPU4--GPU7 \\
-    GPU 互连特征 & 同侧 PIX/PXB，跨侧 SYS & 用于解释双卡与 I/O lane 实验 \\
+    GPU 互连特征 & 同侧 PIX/PXB，跨侧 SYS & 用于解释多 GPU 与 I/O lane 实验 \\
     网络接口 & 2 $\times$ Mellanox NIC & mlx5\_0，mlx5\_1 \\
     \bottomrule
   \end{tabular}
@@ -120,11 +120,11 @@
 
 \section{数据集与任务设置}
 
-本章沿用第三章的数据安排，但实验目的已经从“建立系统对象”转向“统一验证系统结论”，因此不同规模数据在这里承担的角色也更明确。真实或半真实金融数据主要用于回答方法是否可用，1M 规模数据用于把检测效果验证与系统实现链路衔接起来，10M/50M 规模用于观察单卡优化和双卡扩展在中大规模条件下的表现，100M 规模则主要用于检验多 GPU 扩展和 I/O 路径压力下的系统边界\citep{ibm_aml_data,ibm_amlsim,ieee_cis_fraud}。
+本章沿用第三章的数据安排，但实验目的已经从“建立系统对象”转向“统一验证系统结论”，因此不同规模数据在这里承担的角色也更明确。真实或半真实金融数据对应全文的现实口径，1M 合成数据承担桥接层，单卡实验沿“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据”逐层展开，多 GPU 实验则继续延伸到 100M 压力场景\citep{ibm_aml_data,ibm_amlsim,ieee_cis_fraud}。
 
 在有效性验证部分，本文继续使用 \textbf{IEEE-CIS Fraud Detection}、\textbf{Credit Card Fraud Detection} 和 \textbf{DGraphFin} 这三类具有代表性的公开金融数据，分别覆盖结构化支付风控、经典信用卡欺诈以及图金融数据场景\citep{ieee_cis_fraud,dalpozzolo2015creditcard,dgraphfin_paper,dgraphfin_baseline}。这一部分的重点不在于把规模做大，而在于确认融合架构在更接近真实业务分布的数据上仍保持合理的检测效果。
 
-在系统性能与扩展实验部分，本文采用基于 \textbf{IBM AML / AMLSim} 构建的高保真合成金融交易数据\citep{ibm_aml_data,ibm_amlsim}。其中，1M 数据用于连接真实数据验证与系统性能实验，使检测效果和端到端实现处于同一实验口径；10M 数据是单卡综合性能与多卡扩展的共同起点；50M 数据主要用于观察规模继续增大后单卡链路与双卡扩展的性能变化；100M 数据则主要服务于多 GPU 扩展、跨卡归并和共享路径冲突实验。这样的规模分层并不是为了把所有规模都做成“同一类实验的重复版本”，而是为了让不同规模分别承担不同验证任务。
+在系统性能与扩展实验部分，本文采用基于 \textbf{IBM AML / AMLSim} 构建的高保真合成金融交易数据\citep{ibm_aml_data,ibm_amlsim}。其中，1M 数据用于连接真实数据验证与系统实验，使检测效果和端到端实现处于同一实验口径；10M 数据是单卡综合性能与多 GPU 扩展的共同起点；50M 数据主要用于观察规模继续增大后单卡链路与多 GPU 扩展的中间趋势；100M 数据则主要服务于多 GPU 扩展、跨卡归并和共享路径冲突实验。这样的规模分层并不是为了把所有规模都做成“同一类实验的重复版本”，而是为了让不同规模分别承担不同验证任务。
 
 在任务组织上，本章实验可分为四类：\textbf{候选召回与异常评分有效性任务}、\textbf{单卡性能任务}、\textbf{多 GPU replicated 扩展任务}以及\textbf{跨卡归并与 I/O 路径任务}。这些任务共享同一套核心实现，但比较对象和观测重点并不相同。有效性任务更关注检测结果与候选排序质量；单卡性能任务更关注数据路径压缩后的吞吐、延迟和利用率；多 GPU 任务则进一步考察 replicated 主方案、GPU merge 兜底路径以及共享路径冲突对扩展收益的影响。
 
@@ -143,11 +143,11 @@
     \toprule
     数据集 & 来源类型 & 规模层级 & 标签形式 & 本文用途 \\
     \midrule
-    IEEE-CIS Fraud Detection & 真实/半真实公开金融表格数据 & 真实集 & 二分类标签 & 方法有效性主验证；单卡、双卡真实数据口径基准 \\
+    IEEE-CIS Fraud Detection & 真实/半真实公开金融表格数据 & 真实集 & 二分类标签 & 方法有效性主验证；单卡、多 GPU 真实数据口径基准 \\
     IBM AML / AMLSim & 高保真合成金融交易数据 & 1M & 异常交易标签 & 统一小规模桥接实验；连接真实集与扩展实验 \\
-    IBM AML / AMLSim & 高保真合成金融交易数据 & 10M & 异常交易标签 & 单卡与双卡性能对比的共同起点 \\
-    IBM AML / AMLSim & 高保真合成金融交易数据 & 50M & 异常交易标签 & 单卡中大规模性能验证；双卡扩展对比 \\
-    IBM AML / AMLSim & 高保真合成金融交易数据 & 100M & 异常交易标签 & 双卡扩展与压力测试 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 10M & 异常交易标签 & 单卡与多 GPU 性能对比的共同起点 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 50M & 异常交易标签 & 单卡中大规模性能验证；多 GPU 中间规模扩展观察 \\
+    IBM AML / AMLSim & 高保真合成金融交易数据 & 100M & 异常交易标签 & 多 GPU 扩展与压力测试 \\
     \bottomrule
   \end{tabular}
   \end{adjustbox}
@@ -169,32 +169,34 @@
     \node[main, below=12mm of m10] (m50) {50M};
     \node[main, below=10mm of m50] (m100) {100M};
 
-    % 真实集 -> 1 子项
-    \node[child, right=12mm of real] (real_a) {真实场景有效性验证};
+    % 真实集 -> 2 子项
+    \node[child, right=12mm of real, yshift=2mm] (real_a) {真实场景有效性验证};
+    \node[child, below=2mm of real_a] (real_b) {单卡 / 多 GPU 真实口径基准};
     \draw[link] (real.east) -- (real_a.west);
+    \draw[link] (real.east) -- (real_b.west);
 
     % 1M -> 3 子项
     \node[child, right=12mm of m1, yshift=1mm] (m1_a) {方法有效性桥接实验};
     \node[child, below=2mm of m1_a] (m1_b) {单卡性能起点实验};
-    \node[child, below=2mm of m1_b] (m1_c) {双卡性能起点实验};
+    \node[child, below=2mm of m1_b] (m1_c) {多 GPU 性能起点实验};
     \draw[link] (m1.east) -- (m1_a.west);
     \draw[link] (m1.east) -- (m1_b.west);
     \draw[link] (m1.east) -- (m1_c.west);
 
     % 10M -> 2 子项
     \node[child, right=12mm of m10, yshift=2.5mm] (m10_a) {单卡系统性能实验};
-    \node[child, below=2mm of m10_a] (m10_b) {双卡 replicated 扩展实验};
+    \node[child, below=2mm of m10_a] (m10_b) {多 GPU replicated 扩展实验};
     \draw[link] (m10.east) -- (m10_a.west);
     \draw[link] (m10.east) -- (m10_b.west);
 
     % 50M -> 2 子项
     \node[child, right=12mm of m50, yshift=2.5mm] (m50_a) {单卡中大规模性能实验};
-    \node[child, below=2mm of m50_a] (m50_b) {双卡中大规模扩展实验};
+    \node[child, below=2mm of m50_a] (m50_b) {多 GPU 中大规模扩展实验};
     \draw[link] (m50.east) -- (m50_a.west);
     \draw[link] (m50.east) -- (m50_b.west);
 
     % 100M -> 1 子项
-    \node[child, right=12mm of m100] (m100_a) {双卡扩展与压力测试实验};
+    \node[child, right=12mm of m100] (m100_a) {多 GPU 扩展与压力测试实验};
     \draw[link] (m100.east) -- (m100_a.west);
   \end{tikzpicture}
   \caption{数据规模层级与实验类型关系图}
@@ -213,9 +215,9 @@
     实验类型 & 数据规模 & 数据使用方式 & 划分方式 & 主要用途 & 说明 \\
     \midrule
     方法有效性验证 & 真实集 & 训练集 / 验证集 / 测试集 & 固定随机种子划分 & 评估 PR-AUC、Recall@k & 用于真实/半真实数据上的检测效果验证 \\
-    方法有效性桥接实验 & 1M & 训练集 / 验证集 / 测试集 & 与真实集一致的固定划分方式 & 评估 PR-AUC、Recall@k、Top-$k$ overlap & 连接真实集实验与合成扩展实验 \\
+    方法有效性桥接实验 & 1M & 训练集 / 验证集 / 测试集 & 与真实集一致的固定划分方式 & 评估 PR-AUC、Recall@k、Top-$k$ overlap & 连接真实集实验与单卡 / 多 GPU 合成扩展实验 \\
     单卡性能实验 & 10M、50M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、GPU Utilization & 强调端到端吞吐与稳定性 \\
-    双卡扩展实验 & 10M、50M、100M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、CPU/GPU Utilization & 强调扩展收益与控制面负担 \\
+    多 GPU 扩展实验 & 10M、50M、100M & 固定索引集 + 固定查询集 & 不再进行 train/val/test 划分 & 评估 QPS、p99 Latency、CPU/GPU Utilization & 强调扩展收益与控制面负担 \\
     \bottomrule
   \end{tabular}
   \end{adjustbox}
@@ -248,8 +250,8 @@
     候选检索质量 & Top-$k$ overlap & 近似排序结果与基线排序结果前 $k$ 项重合度 & 1M、10M、50M、100M & 说明候选召回没有明显破坏最终排序 \\
     系统性能 & QPS & 每秒处理查询数 & 全部规模 & 端到端吞吐核心指标 \\
     系统性能 & p99 Latency & 99 分位端到端延迟 & 全部规模 & 反映尾延迟与系统稳定性 \\
-    资源利用率 & GPU Utilization & GPU 平均利用率 & 单卡、双卡 & 验证 GPU 主导链路是否真正持续工作 \\
-    资源利用率 & CPU Utilization & CPU 平均占用率 & 双卡重点、单卡辅助 & 验证 CPU 是否仍主要处于控制面 \\
+    资源利用率 & GPU Utilization & GPU 平均利用率 & 单卡、多 GPU & 验证 GPU 主导链路是否真正持续工作 \\
+    资源利用率 & CPU Utilization & CPU 平均占用率 & 多 GPU 重点、单卡辅助 & 验证 CPU 是否仍主要处于控制面 \\
     \bottomrule
   \end{tabular}
   \end{adjustbox}
@@ -319,9 +321,9 @@
     查询负载一致性 & 性能实验共享相同索引集与查询集 & index set、query set、query count & 保证 QPS 与 p99 Latency 可比 \\
     候选预算一致性 & 不同方法使用相同候选预算 & topk、rerank\_budget & 保证 Top-$k$ overlap 与性能比较公平 \\
     批处理一致性 & 不同方案控制相同 batch 组织策略 & batch\_size、bounded\_batch\_size & 避免批大小掩盖系统差异 \\
-    硬件一致性 & 同类比较在相同 GPU/CPU/SSD 条件下进行 & gpu\_model、gpu\_count、cpu、ssd & 保证单卡与双卡实验口径清晰 \\
+    硬件一致性 & 同类比较在相同 GPU/CPU/SSD 条件下进行 & gpu\_model、gpu\_count、cpu、ssd & 保证单卡与多 GPU 实验口径清晰 \\
     软件环境一致性 & 固定软件栈版本 & CUDA、PyTorch、FAISS-GPU、RAPIDS、NCCL & 保证复现实验结果 \\
-    单卡/双卡口径一致性 & 相同规模下分别比较单卡与双卡 & gpu\_count、replica\_mode & 避免不同架构混比 \\
+    单卡/多 GPU 口径一致性 & 相同规模下分别比较单卡与多 GPU & gpu\_count、replica\_mode & 避免不同架构混比 \\
     统计一致性 & 统一重复轮次与汇总方式 & round、seed、mean & 每组 3 轮取均值 \\
     \bottomrule
   \end{tabular}

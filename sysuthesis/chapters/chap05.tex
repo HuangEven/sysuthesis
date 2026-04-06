@@ -180,9 +180,9 @@
 
 \section{多 GPU 扩展实验与结果分析}
 
-本文在 10M 和 100M 规模合成数据集上组织多 GPU 扩展实验，重点回答三个设计问题：replicated 主方案是否能够在吞吐优先场景下获得稳定扩展；当主方案因容量约束失效时，GPU merge 作为兜底路径是否优于 CPU aggregation；在共享路径存在冲突时，拓扑感知 I/O lane 控制是否能够延缓多 GPU 扩展收益的退化。围绕这三个问题，实验分别设置了 replicated 主方案、Local scoring + GPU merge 兜底方案、Local scoring + CPU aggregation 对比基线，以及 Shared-path conflict 路径冲突基线。实验关注 QPS、平均延迟与 p99 延迟、CPU 占用、GPU 利用率、设备间通信与 I/O 路径占用。
+多 GPU 实验的规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据 $\rightarrow$ 100M 合成数据”组织。真实集和 1M 合成数据主要用于与有效性验证及桥接实验保持一致口径，10M 用于 replicated 主方案的起始扩展比较，50M 对应中间规模扩展观察，100M 则承担 GPU merge、CPU aggregation 以及共享路径冲突条件下的压力测试。围绕这一口径，本节重点回答三个设计问题：replicated 主方案是否能够在吞吐优先场景下获得稳定扩展；当主方案因容量约束失效时，GPU merge 作为兜底路径是否优于 CPU aggregation；在共享路径存在冲突时，拓扑感知 I/O lane 控制是否能够延缓多 GPU 扩展收益的退化。实验分别设置了 replicated 主方案、Local scoring + GPU merge 兜底方案、Local scoring + CPU aggregation 对比基线，以及 Shared-path conflict 路径冲突基线。实验关注 QPS、平均延迟与 p99 延迟、CPU 占用、GPU 利用率、设备间通信与 I/O 路径占用。
 
-表~\ref{tab:multi-gpu-exp-setup} 给出了多 GPU 实验设置，图~\ref{fig:qps-vs-gpu} 与图~\ref{fig:latency-quantiles} 展示 replicated 扩展曲线以及不同归并路径下的延迟变化，图~\ref{fig:io-lane-impact} 用于比较 I/O lane 配置对扩展性的影响，表~\ref{tab:multi-gpu-summary} 对总体结果进行了汇总。
+表~\ref{tab:multi-gpu-exp-setup} 给出了多 GPU 实验设置，图~\ref{fig:qps-vs-gpu} 与图~\ref{fig:latency-quantiles} 展示 replicated 扩展曲线以及不同归并路径下的延迟变化，图~\ref{fig:io-lane-impact} 用于比较 I/O lane 配置对扩展性的影响，表~\ref{tab:multi-gpu-summary} 对总体结果进行了汇总。需要说明的是，表图中展示的是该统一口径下的代表性结果：10M 主要对应 replicated 主方案的扩展曲线，100M 主要对应兜底路径与共享路径冲突场景。
 
 从结果上看，replicated 方案在 1/2/4 GPU 条件下保持了较为稳定的 QPS 增长和相对平稳的延迟变化，说明在索引可复制的前提下，查询级并行和本地闭环执行确实更符合本文的吞吐优先目标。与之对应，Local scoring + GPU merge 和 Local scoring + CPU aggregation 的对比主要用于回答兜底路径如何选的问题：两者都建立在索引分片的前提下，但 GPU merge 在平均延迟、p99 延迟和 CPU 利用率上都明显优于 CPU aggregation，说明一旦必须跨卡归并，把局部结果留在设备侧处理仍然更有利于控制路径开销。
 
@@ -201,7 +201,7 @@
       GPU数 & 方案 & 数据规模 & 索引组织 & 批大小 & 候选数 & $k$ & 归并路径 & I/O 绑定 & 备注 \\
       \midrule
       1 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 单卡吞吐扩展基线 \\
-      2 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 双卡 replicated 扩展基线 \\
+      2 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 2 GPU replicated 扩展基线 \\
       4 & Replicated & 10M & Full replica & 4096 & 128 & 50 & None & Topology-aware & 四卡 replicated 扩展基线 \\
       4 & Local scoring + GPU merge & 100M & Sharded index & 3072 & 128 & 50 & NCCL all-gather + GPU merge & Topology-aware & 显存受限时的 GPU 侧归并兜底方案 \\
       4 & Local scoring + CPU aggregation & 100M & Sharded index & 3072 & 128 & 50 & CPU aggregation & Topology-aware & CPU 聚合对比基线 \\
@@ -209,6 +209,8 @@
       4 & Topology-aware binding & 100M & Full replica & 4096 & 128 & 50 & None & Topology-aware & I/O lane 绑定对比实验 \\
       2 & Shared-path conflict & 100M & Full replica & 4096 & 128 & 50 & None & Shared PCIe/SSD path & 共享路径冲突对比基线 \\
       4 & Shared-path conflict & 100M & Full replica & 4096 & 128 & 50 & None & Shared PCIe/SSD path & 共享路径冲突对比基线 \\
+      \midrule
+      \multicolumn{10}{p{15.6cm}}{\footnotesize 注：多 GPU 实验规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据 $\rightarrow$ 100M 合成数据”组织。表中列出的是正文展示所对应的代表性配置，其中 10M 主要服务于 replicated 主方案扩展曲线，100M 主要服务于兜底归并与路径冲突对比。} \\
       \bottomrule
     \end{tabular}
   \end{adjustbox}
@@ -254,6 +256,8 @@
       4 & Topology-aware binding & 100M & 47560.00 & 13.20 & 22.10 & 29.00 & 80.00 \\
       2 & Shared-path conflict & 100M & 21920.00 & 14.80 & 24.80 & 36.00 & 67.50 \\
       4 & Shared-path conflict & 100M & 33140.00 & 24.20 & 41.60 & 43.00 & 58.00 \\
+      \midrule
+      \multicolumn{8}{p{13.0cm}}{\footnotesize 注：结果展示遵循与表~\ref{tab:multi-gpu-exp-setup} 相同的多 GPU 统一规模口径。受版面与结果表达重点限制，表中列出的是 10M replicated 扩展结果和 100M 压力场景结果，用于回答主方案、兜底路径与共享路径冲突三类设计问题。} \\
       \bottomrule
     \end{tabular}
   \end{adjustbox}
