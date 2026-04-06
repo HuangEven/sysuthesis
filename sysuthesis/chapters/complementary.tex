@@ -16,15 +16,15 @@
 
 \chapter{图表补充说明}
 
-本附录应集中说明正文各图表的变量命名、单位、比较口径与补图要求，确保图表在送审版和答辩版中保持一致。
+本附录对正文图表中反复出现的变量命名、单位和比较口径作统一补充，便于阅读时快速核对不同章节之间的含义是否一致。
 
-\section{待补充内容}
+\section{图表口径说明}
 
 \begin{itemize}
-  \item 图表中的变量名称、量纲和取值范围。
-  \item 不同图表之间共享指标的统一定义。
-  \item 同口径比较、跨阶段比较与跨后端比较的边界说明。
-  \item 送审版与答辩版图表的共用与差异化补充规则。
+  \item 图中的 QPS、平均时延和 p99 时延均指对应实验场景下的端到端统计结果；若未特别说明，时延单位统一为 ms。
+  \item 单卡结果图主要用于比较数据路径优化前后的链路差异，多 GPU 结果图主要用于比较 replicated 主方案、GPU 侧归并兜底路径以及共享路径冲突条件下的扩展差异。
+  \item 真实集结果用于有效性验证，1M 及以上合成数据结果用于系统性能与扩展分析，二者不直接比较绝对吞吐数值。
+  \item 正文结果图中的方案名称均对应具体验证场景或系统路径，不再使用含义不明确的编号标签。
 \end{itemize}
 
 \chapter{缩写、变量与配置对照}
@@ -34,7 +34,7 @@
 \renewcommand{\arraystretch}{1.2}
 \small
 \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.34\textwidth}>{\raggedright\arraybackslash}X}
-\textbf{变量或配置项} & \textbf{含义} \\
+变量或配置项 & 含义 \\
 \texttt{batch\_size} & 单次提交到候选召回或精排路径中的批处理大小。 \\
 \texttt{rerank\_budget} & 进入高精度精排阶段的候选数量预算。 \\
 \texttt{nlist} & 索引聚类桶数量或粗排分区规模参数。 \\

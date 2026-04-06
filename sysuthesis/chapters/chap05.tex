@@ -6,23 +6,23 @@
 
 第四章已经从单 GPU 视角完成了系统级优化，并证明在 GPU 主导端到端执行链路、异步 I/O---计算流水线和后端重构协同作用下，单卡场景中的主要损耗已不再集中在主机---设备边界，而更多落在设备侧检索与评分过程本身。然而，这并不意味着单卡已经足以覆盖后续所有实验和部署需求。随着输入规模继续增大、查询并发进一步提升、候选索引逼近单卡显存上限，单卡系统会同时遭遇三类上限：计算上限、容量上限和调度上限。它们对应的问题并不相同，因此多 GPU 扩展也不能被简单理解为“再增加几张卡”。
 
-第一类需求来自\textbf{计算上限}。当候选召回和异常评分都已稳定驻留在 GPU 侧时，单卡吞吐最终会受限于单设备的计算资源。此时，即便继续压缩局部路径开销，系统整体 QPS 仍然难以随业务峰值线性提升。第二类需求来自\textbf{显存与索引容量上限}。在更大索引或更大规模合成扩展数据集条件下，单 GPU 可能无法同时容纳完整索引、副本缓存以及评分中间张量，系统必须在缩小索引规模、降低候选预算和增加设备数量之间进行权衡\citep{cuvs_multi_gpu_nn,cuvs_multi_gpu_ivf_host}。第三类需求则来自\textbf{调度压力}。金融近实时异常检测并不只追求平均吞吐，系统还需要在高峰时段保持稳定的延迟分位数和资源利用率；一旦请求在单设备上集中堆积，即使平均性能尚可，尾延迟也会迅速恶化。
+第一类需求来自计算上限。当候选召回和异常评分都已稳定驻留在 GPU 侧时，单卡吞吐最终会受限于单设备的计算资源。此时，即便继续压缩局部路径开销，系统整体 QPS 仍然难以随业务峰值线性提升。第二类需求来自显存与索引容量上限。在更大索引或更大规模合成扩展数据集条件下，单 GPU 可能无法同时容纳完整索引、副本缓存以及评分中间张量，系统必须在缩小索引规模、降低候选预算和增加设备数量之间进行权衡\citep{cuvs_multi_gpu_nn,cuvs_multi_gpu_ivf_host}。第三类需求则来自调度压力。金融近实时异常检测并不只追求平均吞吐，系统还需要在高峰时段保持稳定的延迟分位数和资源利用率；一旦请求在单设备上集中堆积，即使平均性能尚可，尾延迟也会迅速恶化。
 
 因此，对本文系统而言，多 GPU 扩展的目标并不是抽象地提高并行度，而是在保持检测效果、延迟分位数和实现复杂度可控的前提下，分别回答三个问题：如何把更多查询稳定分摊到多张 GPU 上，如何在容量受限时继续维持索引可用性，以及如何避免调度与共享路径重新成为系统上限\citep{cuvs_multi_gpu_nn}。这些问题一旦进入多卡场景，局部结果如何归并、CPU 是否重新回到关键路径、共享存储路径是否发生拥塞，都会直接影响扩展收益是否能够兑现。
 
-这也是第五章与第四章之间的分工边界所在。第四章解决的是“单卡链路能否被压缩到更低开销”，而第五章需要继续回答“在单卡热路径已经基本收紧之后，系统吞吐如何继续扩大而不重新引入新的中心瓶颈”。基于这一判断，本文后续优先采用数据并行与索引复制的 replicated 主方案，使每张 GPU 尽可能独立完成候选召回与异常评分；只有在索引容量或业务约束明确表明无法复制完整索引时，才进入 GPU 侧跨卡归并与设备间通信的兜底路径。换言之，本章关注的重点不是构造最复杂的多 GPU 检索系统，而是在金融近实时异常检测场景下找到\textbf{更符合吞吐优先和工程可控性的扩展方式}。
+这也是第五章与第四章之间的分工边界所在。第四章解决的是“单卡链路能否被压缩到更低开销”，而第五章需要继续回答“在单卡热路径已经基本收紧之后，系统吞吐如何继续扩大而不重新引入新的中心瓶颈”。基于这一判断，本文后续优先采用数据并行与索引复制的 replicated 主方案，使每张 GPU 尽可能独立完成候选召回与异常评分；只有在索引容量或业务约束明确表明无法复制完整索引时，才进入 GPU 侧跨卡归并与设备间通信的兜底路径。换言之，本章关注的重点不是构造最复杂的多 GPU 检索系统，而是在金融近实时异常检测场景下找到更符合吞吐优先和工程可控性的扩展方式。
 
 \section{多 GPU 扩展策略设计原则}
 
-多 GPU 扩展方案的设计必须建立在系统目标与瓶颈分析的基础上。结合第四章单卡结论与第二章相关工作梳理，本文将多 GPU 扩展方案归纳为四项基本原则：\textbf{查询级并行优于单查询跨卡并行；数据并行与索引复制优先于直接采用索引分片；CPU 保持在控制面；当跨卡归并不可避免时，优先采用 GPU 侧归并。} 这四项原则并非并列罗列，其中前两项决定主方案形态，后两项负责约束兜底路径和运行边界。
+多 GPU 扩展方案的设计必须建立在系统目标与瓶颈分析的基础上。结合第四章单卡结论与第二章相关工作梳理，本文将多 GPU 扩展方案归纳为四项基本原则：查询级并行优于单查询跨卡并行；数据并行与索引复制优先于直接采用索引分片；CPU 保持在控制面；当跨卡归并不可避免时，优先采用 GPU 侧归并。这四项原则并非并列罗列，其中前两项决定主方案形态，后两项负责约束兜底路径和运行边界。
 
-首先，\textbf{查询级并行优于单查询跨卡并行}。若一个查询必须在多张 GPU 上分别完成局部搜索并在末端归并，系统会额外承担局部结果表达、跨卡通信和同步等待等成本；而当不同查询被均衡分发到不同 GPU 时，每张设备就更容易复用单卡阶段已经压缩好的``候选召回---异常评分''闭环。cuVS 多 GPU 文档将 replicated 模式描述为通过在各 GPU 间分发查询以获得更高 query throughput，这一点与本文的吞吐目标一致\citep{cuvs_multi_gpu_nn}。
+首先，查询级并行优于单查询跨卡并行。若一个查询必须在多张 GPU 上分别完成局部搜索并在末端归并，系统会额外承担局部结果表达、跨卡通信和同步等待等成本；而当不同查询被均衡分发到不同 GPU 时，每张设备就更容易复用单卡阶段已经压缩好的``候选召回---异常评分''闭环。cuVS 多 GPU 文档将 replicated 模式描述为通过在各 GPU 间分发查询以获得更高 query throughput，这一点与本文的吞吐目标一致\citep{cuvs_multi_gpu_nn}。
 
-在此前提下，第二项原则进一步限定了主方案选择：\textbf{数据并行与索引复制优先于一开始即采用索引分片}。cuVS 的分布模式定义表明，replicated 更偏向吞吐优先，sharded 更偏向容量扩展\citep{cuvs_multi_gpu_nn,cuvs_dist_mode}。因此，只要索引仍可复制，完整副本在每张 GPU 上独立服务本地查询，通常比从一开始就引入跨卡依赖更符合本文的系统目标。
+在此前提下，第二项原则进一步限定了主方案选择：数据并行与索引复制优先于一开始即采用索引分片。cuVS 的分布模式定义表明，replicated 更偏向吞吐优先，sharded 更偏向容量扩展\citep{cuvs_multi_gpu_nn,cuvs_dist_mode}。因此，只要索引仍可复制，完整副本在每张 GPU 上独立服务本地查询，通常比从一开始就引入跨卡依赖更符合本文的系统目标。
 
-第三项原则主要约束控制边界，即\textbf{CPU 保持在控制面而不重新回到结果处理主路径}。cuVS 文档提示，多 GPU ANN 的部分实现要求数据集、查询与输出数组位于 host memory，这意味着若直接沿用 host-centric 默认路径，则 CPU 与主机内存会重新进入关键路径\citep{cuvs_multi_gpu_ivf_host}。基于这一认识，本文在多 GPU 方案中将 CPU 定位为控制面调度者：它负责请求队列管理、负载均衡、bounded batching、运行时监控和最终小规模结果汇总，但不承担大规模候选集合或评分中间张量的重新组织。
+第三项原则主要约束控制边界，即 CPU 保持在控制面而不重新回到结果处理主路径。cuVS 文档提示，多 GPU ANN 的部分实现要求数据集、查询与输出数组位于 host memory，这意味着若直接沿用 host-centric 默认路径，则 CPU 与主机内存会重新进入关键路径\citep{cuvs_multi_gpu_ivf_host}。基于这一认识，本文在多 GPU 方案中将 CPU 定位为控制面调度者：它负责请求队列管理、负载均衡、bounded batching、运行时监控和最终小规模结果汇总，但不承担大规模候选集合或评分中间张量的重新组织。
 
-最后一项原则只在主方案不能直接成立时才发挥作用，即\textbf{当必须跨卡归并时，归并逻辑尽量下沉到 GPU 侧，并通过 NCCL 等设备间通信机制完成}。NCCL 文档指出其通信操作会异步入队到 CUDA stream 上执行，但也警告在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream 会形成全局同步点\citep{nccl_stream_semantics}。这意味着 GPU 侧归并虽然优于 CPU 聚合，却仍然带来额外通信组织成本，因此它在本文中是明确的兜底路径，而不是与 replicated 并行竞争的第二主线。
+最后一项原则只在主方案不能直接成立时才发挥作用，即当必须跨卡归并时，归并逻辑尽量下沉到 GPU 侧，并通过 NCCL 等设备间通信机制完成。NCCL 文档指出其通信操作会异步入队到 CUDA stream 上执行，但也警告在同一 \texttt{ncclGroupStart/End()} 中混用多个 stream 会形成全局同步点\citep{nccl_stream_semantics}。这意味着 GPU 侧归并虽然优于 CPU 聚合，却仍然带来额外通信组织成本，因此它在本文中是明确的兜底路径，而不是与 replicated 并行竞争的第二主线。
 
 表~\ref{tab:primary-vs-fallback} 对 replicated 主方案、sharded+GPU 归并兜底方案以及 CPU 聚合对比路径的适用条件进行了归纳。
 
@@ -63,7 +63,7 @@
 
 \section{数据并行与索引复制的多 GPU 执行架构}
 
-基于前述设计原则，本文将多 GPU 场景下的主扩展方案定义为\textbf{数据并行与索引复制（replicated）}。这一方案的核心取向非常明确：它优先解决吞吐扩展问题，而不是优先解决容量扩展问题。换言之，只要完整索引仍能复制到每张 GPU，本文就更倾向于用显存换取更简单的数据路径和更稳定的查询闭环，而不是过早引入跨卡依赖\citep{cuvs_multi_gpu_nn}。在该方案中，完整索引被复制到每张 GPU 上，每张 GPU 都具备完整的候选召回与异常评分能力；查询按批次或微批次被分发到不同 GPU，各设备在本地独立执行``查询向量组织---候选召回---异常评分---局部结果输出''全链路流程；CPU 主要承担请求级调度、批次分配和最终小规模结果汇总职责。
+基于前述设计原则，本文将多 GPU 场景下的主扩展方案定义为数据并行与索引复制（replicated）。这一方案的核心取向非常明确：它优先解决吞吐扩展问题，而不是优先解决容量扩展问题。换言之，只要完整索引仍能复制到每张 GPU，本文就更倾向于用显存换取更简单的数据路径和更稳定的查询闭环，而不是过早引入跨卡依赖\citep{cuvs_multi_gpu_nn}。在该方案中，完整索引被复制到每张 GPU 上，每张 GPU 都具备完整的候选召回与异常评分能力；查询按批次或微批次被分发到不同 GPU，各设备在本地独立执行``查询向量组织---候选召回---异常评分---局部结果输出''全链路流程；CPU 主要承担请求级调度、批次分配和最终小规模结果汇总职责。
 
 在执行流程上，数据并行与索引复制架构可以形式化表示为：给定总查询集合 $Q=\{q_1,q_2,\ldots,q_m\}$，调度器将其划分为若干子批次 $\{B_1,B_2,\ldots,B_g\}$，并将这些子批次分配给 $g$ 张 GPU。每张 GPU $G_j$ 本地维护一份完整索引 $\mathcal{I}_j=\mathcal{I}$，对其收到的批次 $B_j$ 独立执行
 \begin{equation}
@@ -106,58 +106,56 @@
   \label{tab:control-vs-data-plane}
   \centering
   \footnotesize
-  \setlength{\tabcolsep}{2.4pt}
-  \renewcommand{\arraystretch}{1.18}
-  \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{p{1.30cm}p{2.10cm}p{2.80cm}p{3.75cm}p{5.35cm}}
+  \setlength{\tabcolsep}{1.8pt}
+  \renewcommand{\arraystretch}{1.16}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.72cm}>{\raggedright\arraybackslash}p{2.10cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{2.95cm}>{\raggedright\arraybackslash}p{3.30cm}}
       \toprule
       类别 & 组件 & 职责 & 关键参数 & 备注 \\
       \midrule
       控制面 &
       \makecell[l]{请求队列与\\batching 调度器} &
-      统一接收请求、执行 bounded batching、形成微批并决定批次进入时机 &
-      \makecell[l]{\texttt{batch\_size}\\\texttt{micro\_batch\_timeout\_ms}\\\texttt{max\_inflight\_batches}} &
+      统一接收请求，执行 bounded batching，形成微批并控制批次进入时机 &
+      {\scriptsize\makecell[l]{\texttt{batch\_size}\\\texttt{micro\_batch\_timeout\_ms}\\\texttt{max\_inflight\_batches}}} &
       \makecell[l]{直接决定吞吐与平均延迟的折中；\\CPU 只负责批次组织，\\不接收大规模候选集合} \\
       \midrule
       控制面 &
       GPU 负载均衡器 &
-      根据 GPU 空闲度、队列深度和显存水位把微批动态分配到不同设备 &
-      \makecell[l]{\texttt{queue\_depth\_threshold}\\\texttt{gpu\_mem\_watermark\_pct}\\\texttt{dispatch\_window}} &
+      按 GPU 空闲度、队列深度和显存水位动态分配微批 &
+      {\scriptsize\makecell[l]{\texttt{queue\_depth\_threshold}\\\texttt{gpu\_mem\_watermark\_pct}\\\texttt{dispatch\_window}}} &
       \makecell[l]{优先保持各卡负载平衡并控制\\尾延迟；适用于 replicated 主路径} \\
       \midrule
       数据平面 &
-      \makecell[l]{FlashANNS /\\FAISS-GPU 候选召回后端} &
-      在设备侧完成向量检索、候选筛选和局部 top-$k$ 组织 &
-      \makecell[l]{\texttt{nprobe}\\\texttt{candidate\_k}\\\texttt{search\_stream\_count}} &
+      \makecell[l]{FlashANNS\\FAISS-GPU\\候选召回后端} &
+      \makecell[l]{在设备侧完成向量检索、\\候选筛选与局部 top-$k$ 组织} &
+      {\scriptsize\makecell[l]{\texttt{nprobe}\\\texttt{candidate\_k}\\\texttt{search\_stream\_count}}} &
       \makecell[l]{每张 GPU 独立执行本地召回；\\与单卡阶段的 GPU 常驻链路保持一致} \\
       \midrule
       数据平面 &
-      PyTOD 评分执行器 &
-      对候选集合执行张量化异常评分、局部排序和最终分数输出 &
-      \makecell[l]{\texttt{score\_batch\_size}\\\texttt{k}\\\texttt{score\_stream\_priority}} &
+      \makecell[l]{PyTOD\\评分执行器} &
+      \makecell[l]{在候选集合上执行张量化异常评分、\\局部排序和最终分数输出} &
+      {\scriptsize\makecell[l]{\texttt{score\_batch\_size}\\\texttt{k}\\\texttt{score\_stream\_priority}}} &
       \makecell[l]{分数、排序结果和必要日志元信息\\留在设备侧直至最终输出} \\
       \midrule
       通信 &
       NCCL 归并与通信流 &
       在 sharded 兜底路径中完成 all-gather / reduce / merge 等设备间结果合并 &
-      \makecell[l]{\texttt{nccl\_op}\\\texttt{merge\_chunk\_size}\\\texttt{comm\_stream\_priority}} &
+      {\scriptsize\makecell[l]{\texttt{nccl\_op}\\\texttt{merge\_chunk\_size}\\\texttt{comm\_stream\_priority}}} &
       \makecell[l]{仅在 replicated 失效时启用；\\需避免在同一 \texttt{ncclGroupStart/End()}\\中混用多个 stream} \\
       \midrule
       I/O &
       \makecell[l]{I/O 队列与 lane\\准入控制器} &
       管理 SSD 读队列、GPU--SSD lane 绑定和 in-flight I/O 数量，抑制共享路径拥塞 &
-      \makecell[l]{\texttt{io\_queue\_depth}\\\texttt{max\_inflight\_io}\\\texttt{lane\_tokens\_per\_gpu}} &
+      {\scriptsize\makecell[l]{\texttt{io\_queue\_depth}\\\texttt{max\_inflight\_io}\\\texttt{lane\_tokens\_per\_gpu}}} &
       \makecell[l]{与拓扑感知绑定策略联动；\\参数过大时会拉高 p99，\\过小则会限制吞吐} \\
       \bottomrule
     \end{tabular}
-  \end{adjustbox}
 \end{table}
 
 \section{跨卡归并场景下的 GPU 侧归并与 NCCL 通信}
 
-当索引容量超过单卡显存可容纳范围，或业务约束要求单一查询必须访问分布在多张 GPU 上的局部索引时，replicated 主方案就不再直接适用，系统必须进入跨卡归并场景。本文把这一场景明确界定为\textbf{兜底路径}：只有在主方案因容量或部署条件失效时，才引入 sharded 索引与跨卡结果合并。这样界定的原因很直接，因为一旦进入归并路径，系统就必须额外承担局部结果表达、设备间通信和流协调等成本。
+当索引容量超过单卡显存可容纳范围，或业务约束要求单一查询必须访问分布在多张 GPU 上的局部索引时，replicated 主方案就不再直接适用，系统必须进入跨卡归并场景。本文把这一场景明确界定为兜底路径：只有在主方案因容量或部署条件失效时，才引入 sharded 索引与跨卡结果合并。这样界定的原因很直接，因为一旦进入归并路径，系统就必须额外承担局部结果表达、设备间通信和流协调等成本。
 
-在此条件下，本文仍坚持一个约束：\textbf{局部结果尽量在 GPU 侧组织与合并，CPU 只接收最终极小规模结果。} cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{TREE\_MERGE} 两类归并方式，为本文设计 GPU 侧归并路径提供了参考\citep{cuvs_dist_mode}。与 CPU aggregation 相比，GPU merge 的主要收益在于减少大规模结果回传和主机侧排序开销，使跨卡合并仍尽可能延续设备侧处理逻辑；但它并不会像 replicated 那样天然简单，因为额外的通信与同步组织是无法完全省掉的。
+在此条件下，本文仍坚持一个约束：局部结果尽量在 GPU 侧组织与合并，CPU 只接收最终极小规模结果。cuVS 在 sharded 模式下给出了 \texttt{MERGE\_ON\_ROOT\_RANK} 与 \texttt{TREE\_MERGE} 两类归并方式，为本文设计 GPU 侧归并路径提供了参考\citep{cuvs_dist_mode}。与 CPU aggregation 相比，GPU merge 的主要收益在于减少大规模结果回传和主机侧排序开销，使跨卡合并仍尽可能延续设备侧处理逻辑；但它并不会像 replicated 那样天然简单，因为额外的通信与同步组织是无法完全省掉的。
 
 在设备间通信实现方面，本文采用 NCCL 作为主要通信机制，并将通信流与局部计算流明确分离。NCCL 文档指出其通信操作异步入队到指定 CUDA stream，但在同一 \texttt{ncclGroupStart/End()} 组内混用多个 stream 会形成全局同步点\citep{nccl_stream_semantics}。因此，GPU 侧归并的收益建立在一个前提上：通信必须被控制在必要范围内，并与本地计算流合理解耦。若通信组织不当，兜底方案很容易因同步点过多而侵蚀掉原本希望保留的扩展收益。
 
@@ -165,7 +163,7 @@
 
 在多 GPU 异常检测系统中，扩展上限不仅由 GPU 数量决定，还受制于存储路径和 PCIe/NUMA 拓扑。单卡阶段被压缩掉的路径开销，在多卡环境下可能以另一种形式重新出现：如果多张 GPU 共享同一 SSD 通道或 PCIe 路径，局部检索和候选读取虽然仍在设备侧执行，但共享链路上的排队会直接反映到吞吐下降和 p99 上升上。GDS 文档指出，GDS 通过在 GPU memory 与 storage 之间建立 direct DMA path 避免 CPU bounce buffer，并强调拓扑路径会影响传输效率\citep{gds_overview,gds_design_guide}。这意味着，多 GPU 的实际收益往往先受到 I/O 路径约束，而不一定先受到计算约束。
 
-基于这一认识，本文引入\textbf{拓扑感知 I/O lane 绑定与准入控制}机制：运行前分析 GPU、SSD、PCIe root complex、PCIe switch 与 NUMA 节点之间的关系；运行时尽量将 GPU 与 SSD 通道进行 lane 级绑定，并对每条 lane 的 in-flight 请求数做有界控制，以避免过度并发导致尾延迟失控。这里的重点不是解释硬件连接本身，而是把拓扑关系转化为可执行的资源组织策略，使“增加 GPU 数量”不会因为共享路径冲突而过早失效。
+基于这一认识，本文引入拓扑感知 I/O lane 绑定与准入控制机制：运行前分析 GPU、SSD、PCIe root complex、PCIe switch 与 NUMA 节点之间的关系；运行时尽量将 GPU 与 SSD 通道进行 lane 级绑定，并对每条 lane 的 in-flight 请求数做有界控制，以避免过度并发导致尾延迟失控。这里的重点不是解释硬件连接本身，而是把拓扑关系转化为可执行的资源组织策略，使“增加 GPU 数量”不会因为共享路径冲突而过早失效。
 
 图~\ref{fig:topology} 以左右对比方式展示了拓扑感知 I/O lane 在合理绑定与共享冲突两种条件下的 GPU、SSD、PCIe 与 NUMA 关系，为后续扩展结果中的路径差异提供解释依据。
 

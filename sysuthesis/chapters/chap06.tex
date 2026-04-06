@@ -10,7 +10,7 @@
 
 软件环境方面，实验系统由 PyTOD/TOD 评分实现、FlashANNS 候选召回模块、RAPIDS 数据处理组件、FAISS-GPU 检索后端增强组件以及多 GPU 通信和调度运行时共同组成。为了保证结果可复核，本文固定 Python、PyTorch、PyTOD、FAISS-GPU、CUDA、NCCL 以及操作系统版本，并把这些版本视为统一的软件环境快照。由于不同版本的 RAPIDS、FAISS-GPU 和 cuVS 在接口与性能行为上可能存在差异，本章不讨论“哪个版本更优”，而是以当前组合环境作为全文实验的共同基础\citep{cuvs_multi_gpu_nn,nccl_stream_semantics,gds_overview}。
 
-在实验分类上，本文将综合实验划分为三组：\textbf{方法有效性验证实验}，对应真实或半真实数据及 1M 合成桥接口径；\textbf{单卡系统性能实验}，规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据”组织；\textbf{多 GPU 扩展实验}，规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据 $\rightarrow$ 100M 合成数据”组织，用于比较 replicated 主方案、GPU 侧归并兜底路径以及 I/O 路径组织方式。三类实验共享一套基础代码框架，但在数据规模、硬件使用方式和评价重点上各有分工。
+在实验分类上，本文将综合实验划分为三组：方法有效性验证实验，对应真实或半真实数据及 1M 合成桥接口径；单卡系统性能实验，规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据”组织；多 GPU 扩展实验，规模口径统一按“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据 $\rightarrow$ 100M 合成数据”组织，用于比较 replicated 主方案、GPU 侧归并兜底路径以及 I/O 路径组织方式。三类实验共享一套基础代码框架，但在数据规模、硬件使用方式和评价重点上各有分工。
 
 表~\ref{tab:hw-config} 和表~\ref{tab:sw-config} 分别给出了硬件与软件环境快照，图~\ref{fig:exp-topology} 则补充展示了实验平台中 CPU、GPU、SSD 与 PCIe/NUMA 的连接关系，为后续性能差异解释提供硬件背景。
 
@@ -122,11 +122,11 @@
 
 本章沿用第三章的数据安排，但实验目的已经从“建立系统对象”转向“统一验证系统结论”，因此不同规模数据在这里承担的角色也更明确。真实或半真实金融数据对应全文的现实口径，1M 合成数据承担桥接层，单卡实验沿“真实集 $\rightarrow$ 1M 合成数据 $\rightarrow$ 10M 合成数据 $\rightarrow$ 50M 合成数据”逐层展开，多 GPU 实验则继续延伸到 100M 压力场景\citep{ibm_aml_data,ibm_amlsim,ieee_cis_fraud}。
 
-在有效性验证部分，本文继续使用 \textbf{IEEE-CIS Fraud Detection}、\textbf{Credit Card Fraud Detection} 和 \textbf{DGraphFin} 这三类具有代表性的公开金融数据，分别覆盖结构化支付风控、经典信用卡欺诈以及图金融数据场景\citep{ieee_cis_fraud,dalpozzolo2015creditcard,dgraphfin_paper,dgraphfin_baseline}。这一部分的重点不在于把规模做大，而在于确认融合架构在更接近真实业务分布的数据上仍保持合理的检测效果。
+在有效性验证部分，本文继续使用 IEEE-CIS Fraud Detection、Credit Card Fraud Detection 和 DGraphFin 这三类具有代表性的公开金融数据，分别覆盖结构化支付风控、经典信用卡欺诈以及图金融数据场景\citep{ieee_cis_fraud,dalpozzolo2015creditcard,dgraphfin_paper,dgraphfin_baseline}。这一部分的重点不在于把规模做大，而在于确认融合架构在更接近真实业务分布的数据上仍保持合理的检测效果。
 
-在系统性能与扩展实验部分，本文采用基于 \textbf{IBM AML / AMLSim} 构建的高保真合成金融交易数据\citep{ibm_aml_data,ibm_amlsim}。其中，1M 数据用于连接真实数据验证与系统实验，使检测效果和端到端实现处于同一实验口径；10M 数据是单卡综合性能与多 GPU 扩展的共同起点；50M 数据主要用于观察规模继续增大后单卡链路与多 GPU 扩展的中间趋势；100M 数据则主要服务于多 GPU 扩展、跨卡归并和共享路径冲突实验。这样的规模分层并不是为了把所有规模都做成“同一类实验的重复版本”，而是为了让不同规模分别承担不同验证任务。
+在系统性能与扩展实验部分，本文采用基于 IBM AML / AMLSim 构建的高保真合成金融交易数据\citep{ibm_aml_data,ibm_amlsim}。其中，1M 数据用于连接真实数据验证与系统实验，使检测效果和端到端实现处于同一实验口径；10M 数据是单卡综合性能与多 GPU 扩展的共同起点；50M 数据主要用于观察规模继续增大后单卡链路与多 GPU 扩展的中间趋势；100M 数据则主要服务于多 GPU 扩展、跨卡归并和共享路径冲突实验。这样的规模分层并不是为了把所有规模都做成“同一类实验的重复版本”，而是为了让不同规模分别承担不同验证任务。
 
-在任务组织上，本章实验可分为四类：\textbf{候选召回与异常评分有效性任务}、\textbf{单卡性能任务}、\textbf{多 GPU replicated 扩展任务}以及\textbf{跨卡归并与 I/O 路径任务}。这些任务共享同一套核心实现，但比较对象和观测重点并不相同。有效性任务更关注检测结果与候选排序质量；单卡性能任务更关注数据路径压缩后的吞吐、延迟和利用率；多 GPU 任务则进一步考察 replicated 主方案、GPU merge 兜底路径以及共享路径冲突对扩展收益的影响。
+在任务组织上，本章实验可分为四类：候选召回与异常评分有效性任务、单卡性能任务、多 GPU replicated 扩展任务以及跨卡归并与 I/O 路径任务。这些任务共享同一套核心实现，但比较对象和观测重点并不相同。有效性任务更关注检测结果与候选排序质量；单卡性能任务更关注数据路径压缩后的吞吐、延迟和利用率；多 GPU 任务则进一步考察 replicated 主方案、GPU merge 兜底路径以及共享路径冲突对扩展收益的影响。
 
 在数据使用方式上，有效性验证任务按训练集、验证集和测试集划分，以保证 PR-AUC、Recall@$k$ 等指标可比；性能与扩展实验则采用固定索引集与固定查询集，将查询批量持续注入系统，以更准确地衡量 QPS、延迟分位数与资源利用率。这样区分的目的，是避免把“检测效果评估”和“系统压测”混在同一套数据口径下讨论。
 

@@ -39,7 +39,7 @@
 
 从处理流程上看，本文关注的系统链路如图~\ref{fig:fin-ad-standard-flow} 所示，可概括为：对原始金融交易记录、账户行为统计和上下文特征进行规范化与向量化表示；基于向量化表示执行高吞吐候选召回，以缩小后续异常评分所需处理的样本范围；在候选集合上执行张量化异常评分，输出异常分数或排序结果；最后结合日志、统计指标与告警规则完成结果输出与追踪\citep{zhao2022tod,xiao2025flashanns}。后续各章围绕的，正是这条``向量化表示---候选召回---异常评分---结果输出与追踪''链路在大规模条件下如何稳定落地的问题。
 
-在这一处理链路上，本文选择 \textbf{PyTOD--FlashANNS 融合异常检测系统} 作为具体研究对象。PyTOD 将异常检测过程抽象为可复用的张量算子，适合作为异常评分主干；FlashANNS 则通过异步 I/O---计算流水线提供高吞吐候选召回能力，适合作为候选召回前端，如图~\ref{fig:pytod-flashanns-concept} 所示\citep{zhao2022tod,xiao2025flashanns}。二者的角色分工相对清晰，但真正落到工程实现时，阶段边界上的开销并不会因为模块职责明确而自动消失。若查询特征先在 CPU 上构造，再传输至 GPU 检索，而候选结果又回到 CPU 重新组织后再送回 GPU 评分，那么瓶颈会很快转移到 CPU$\leftrightarrow$GPU 数据搬运与阶段同步上\citep{faiss_gpu_wiki,rapids_rmm_pinned}；进一步地，在多 GPU 场景中，若将多个 GPU 的局部结果重新集中到 CPU 归并，CPU 还可能再次成为系统瓶颈\citep{cuvs_multi_gpu_ivf_host}。
+在这一处理链路上，本文选择 PyTOD--FlashANNS 融合异常检测系统作为具体研究对象。PyTOD 将异常检测过程抽象为可复用的张量算子，适合作为异常评分主干；FlashANNS 则通过异步 I/O---计算流水线提供高吞吐候选召回能力，适合作为候选召回前端，如图~\ref{fig:pytod-flashanns-concept} 所示\citep{zhao2022tod,xiao2025flashanns}。二者的角色分工相对清晰，但真正落到工程实现时，阶段边界上的开销并不会因为模块职责明确而自动消失。若查询特征先在 CPU 上构造，再传输至 GPU 检索，而候选结果又回到 CPU 重新组织后再送回 GPU 评分，那么瓶颈会很快转移到 CPU$\leftrightarrow$GPU 数据搬运与阶段同步上\citep{faiss_gpu_wiki,rapids_rmm_pinned}；进一步地，在多 GPU 场景中，若将多个 GPU 的局部结果重新集中到 CPU 归并，CPU 还可能再次成为系统瓶颈\citep{cuvs_multi_gpu_ivf_host}。
 
 
 \begin{figure}[htbp]
@@ -106,9 +106,9 @@
 
 创新性主要体现在以下三个方面：
 \begin{enumerate}
-  \item \textbf{系统融合创新：}面向金融大规模异常检测任务，将高吞吐候选召回与张量化异常评分组织为统一执行链路，使 PyTOD 与 FlashANNS 不再作为彼此割裂的独立模块运行。
-  \item \textbf{单卡数据路径优化创新：}围绕候选召回与异常评分之间的阶段边界开销，提出 GPU 主导执行链路，并结合 RAPIDS、FAISS-GPU、pinned memory 与异步流压缩 CPU$\leftrightarrow$GPU 数据路径。
-  \item \textbf{多 GPU 扩展创新：}以 replicated 作为主扩展方案，将 CPU 收敛到控制面；在容量或部署约束下，再引入 GPU 侧跨卡归并、NCCL 通信与拓扑感知 I/O 优化，以支撑更复杂的多 GPU 运行场景。
+  \item 系统融合创新：面向金融大规模异常检测任务，将高吞吐候选召回与张量化异常评分组织为统一执行链路，使 PyTOD 与 FlashANNS 不再作为彼此割裂的独立模块运行。
+  \item 单卡数据路径优化创新：围绕候选召回与异常评分之间的阶段边界开销，提出 GPU 主导执行链路，并结合 RAPIDS、FAISS-GPU、pinned memory 与异步流压缩 CPU$\leftrightarrow$GPU 数据路径。
+  \item 多 GPU 扩展创新：以 replicated 作为主扩展方案，将 CPU 收敛到控制面；在容量或部署约束下，再引入 GPU 侧跨卡归并、NCCL 通信与拓扑感知 I/O 优化，以支撑更复杂的多 GPU 运行场景。
 \end{enumerate}
 
 
