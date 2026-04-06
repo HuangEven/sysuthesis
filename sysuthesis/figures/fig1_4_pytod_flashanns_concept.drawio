@@ -1,0 +1,128 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.1.2 Chrome/138.0.7204.243 Electron/37.4.0 Safari/537.36" version="28.1.2">
+  <diagram id="pytod-flashanns" name="Page-1">
+    <mxGraphModel dx="2194" dy="1403" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#ffffff;" parent="1" vertex="1">
+          <mxGeometry x="20" y="10" width="1560" height="860" as="geometry" />
+        </mxCell>
+        <mxCell id="input_group" value="金融风控输入" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="60" y="290" width="220" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="input_1" value="交易流水" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="95" y="335" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="input_2" value="账户行为" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="95" y="390" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="input_3" value="设备与关系特征" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="95" y="445" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="prep" value="数据预处理与特征构造&#xa;样本向量化 / 特征清洗 / 评分输入组织" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="330" y="340" width="260" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion" value="PyTOD–FlashANNS 融合调度层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="690" y="70" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion_text" value="候选召回与异常评分协同执行&#xa;有界候选集 + 张量化评分 + 结果聚合" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="540" y="180" width="280" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=16;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="650" y="250" width="400" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_1" value="图索引 / 向量索引" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="685" y="300" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_2" value="异步 I/O–计算流水" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="865" y="300" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_3" value="Warp 级并发 SSD 访问" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="685" y="365" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_4" value="图度 / 带宽自适应" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="865" y="365" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_5" value="输出：有界候选集" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf4e8;strokeColor=#82b366;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="777.5" y="438" width="145" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=16;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="650" y="560" width="400" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_1" value="基础张量算子" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="685" y="610" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_2" value="功能算子组合" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="865" y="610" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_3" value="自动批处理 / 算子融合" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="685" y="675" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_4" value="张量化异常评分" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="865" y="675" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_5" value="输出：候选样本异常分数" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#b85450;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="735" y="745" width="195" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="support" value="GPU 执行与工程支撑层：PyTorch / CUDA / RAPIDS / FAISS-GPU / NCCL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#999999;strokeWidth=2;fontSize=15;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="270" y="650" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="output_group" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="1110" y="290" width="260" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="output_1" value="风险排序结果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="1165" y="340" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="output_2" value="异常告警" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="1165" y="395" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="output_3" value="人工复核 / 反馈" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+          <mxGeometry x="1165" y="450" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;" parent="1" source="input_group" target="prep" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="prep" target="fusion" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="召回查询" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;" parent="1" source="fusion" target="flash_group" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="候选集" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;" parent="1" source="flash_5" target="pytod_group" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="评分结果" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;fontSize=13;" parent="1" source="pytod_5" target="output_group" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="GPU 张量执行" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=13;strokeColor=#999999;" parent="1" source="support" target="pytod_group" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="GPU 检索执行" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=13;strokeColor=#999999;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" parent="1" source="support" target="flash_group" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="460" y="530" />
+              <mxPoint x="750" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="反馈闭环" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;fontSize=13;strokeColor=#666666;entryX=0.25;entryY=1;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" parent="1" source="output_3" target="prep" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1203" y="540" />
+              <mxPoint x="395" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-p1lNRRULjq2P6yqC7zs-1" value="&lt;span style=&quot;font-size: 16px; font-weight: 700;&quot;&gt;系统输出&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="305" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="-p1lNRRULjq2P6yqC7zs-2" value="&lt;span style=&quot;font-size: 16px; font-weight: 700;&quot;&gt;FlashANNS 候选召回子系统&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="675" y="260" width="215" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="-p1lNRRULjq2P6yqC7zs-3" value="&lt;span style=&quot;font-size: 16px; font-weight: 700;&quot;&gt;PyTOD 异常评分子系统&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="670" y="570" width="180" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

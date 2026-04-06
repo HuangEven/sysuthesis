@@ -1,0 +1,81 @@
+<mxfile host="app.diagrams.net" modified="2026-03-28T17:10:00.000Z" agent="OpenAI" version="24.7.17">
+  <diagram id="financial-standard-flow" name="Page-1">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="g1" value="数据接入" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="250" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="g2" value="实时检测" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="110" width="410" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="g3" value="告警与复核" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="110" width="350" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="g4" value="处置与反馈" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="110" width="320" height="620" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n1" value="多源业务数据&#xa;交易流水 / 账户行为 / 设备日志 / 外部名单" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="75" y="170" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" value="数据接入与标准化&#xa;清洗 / 去重 / 编码 / 对齐" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="75" y="315" width="180" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" value="账户画像与历史行为库" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="75" y="460" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" value="规则库 / 黑白名单 / 阈值配置" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="75" y="545" width="180" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n5" value="实时预处理与特征构造&#xa;时间窗统计 / 关系聚合 / 向量化表示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="410" y="170" width="270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n6" value="规则引擎初筛&#xa;命中规则 / 阈值判断 / 名单匹配" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="410" y="315" width="270" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n7" value="异常检测模型评分&#xa;近邻 / 密度 / 统计 / 集成模型" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="410" y="445" width="270" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n8" value="风险分级与告警生成" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="410" y="575" width="270" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n9" value="告警分发&#xa;控制台 / 工单 / 监控平台" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="865" y="220" width="220" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="n10" value="人工复核与调查&#xa;样本核验 / 关联分析 / 业务判断" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="865" y="350" width="220" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="n11" value="审计留痕与结果记录" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="865" y="500" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n12" value="处置执行&#xa;拦截 / 限额 / 冻结 / 放行" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="240" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n13" value="反馈闭环&#xa;规则优化 / 模型迭代 / 名单更新" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="420" width="200" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n1" target="n2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n2" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n5" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n6" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n7" target="n8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n8" target="n9"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n9" target="n10"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n10" target="n12"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n10" target="n11"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="n11" target="n13"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" edge="1" parent="1" source="n13" target="n3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" edge="1" parent="1" source="n13" target="n4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" edge="1" parent="1" source="n3" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" edge="1" parent="1" source="n4" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

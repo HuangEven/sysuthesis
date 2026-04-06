@@ -1,0 +1,47 @@
+<mxfile host="app.diagrams.net" modified="2026-03-29T08:40:00.000Z" agent="OpenAI" version="24.7.17">
+  <diagram id="fig1-7-roadmap" name="Page-1">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+
+        <mxCell id="goal" value="Research Goal&#xa;Scalable Financial Anomaly Detection with High Throughput, Low Latency, and Multi-GPU Support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=3;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="360" y="40" width="840" height="90" as="geometry"/></mxCell>
+
+        <mxCell id="f0" value="Technical Foundations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=top;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="70" y="170" width="1460" height="145" as="geometry"/></mxCell>
+        <mxCell id="f1" value="OD Methodology&#xa;BTO / FO Abstraction&#xa;Provable Quantization&#xa;Automatic Batching" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=15;" vertex="1" parent="1"><mxGeometry x="120" y="215" width="260" height="80" as="geometry"/></mxCell>
+        <mxCell id="f2" value="Candidate Retrieval&#xa;Graph-based ANNS&#xa;Out-of-core Search&#xa;Bounded Candidate Set" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=15;" vertex="1" parent="1"><mxGeometry x="430" y="215" width="260" height="80" as="geometry"/></mxCell>
+        <mxCell id="f3" value="System Acceleration&#xa;RAPIDS / FAISS-GPU&#xa;Pinned Memory&#xa;Async Streams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=15;" vertex="1" parent="1"><mxGeometry x="740" y="215" width="260" height="80" as="geometry"/></mxCell>
+        <mxCell id="f4" value="Multi-GPU Execution&#xa;Data Parallelism&#xa;Index Replication&#xa;NCCL Communication" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1050" y="215" width="260" height="80" as="geometry"/></mxCell>
+
+        <mxCell id="fusion_group" value="Stage I  Fusion Framework" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=top;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="80" y="360" width="440" height="300" as="geometry"/></mxCell>
+        <mxCell id="fusion_a" value="Financial Data Modeling&#xa;Samples / Features / Query Workload" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" vertex="1" parent="1"><mxGeometry x="125" y="410" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="fusion_b" value="PyTOD Scoring Backbone&#xa;Tensorized OD Operators" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" vertex="1" parent="1"><mxGeometry x="315" y="410" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="fusion_c" value="FlashANNS Candidate Retrieval&#xa;Candidate Recall Module" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" vertex="1" parent="1"><mxGeometry x="125" y="520" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="fusion_d" value="Fusion Execution Flow&#xa;Recall → Re-score → Rank" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf4e8;strokeColor=#82b366;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="315" y="520" width="155" height="70" as="geometry"/></mxCell>
+
+        <mxCell id="single_group" value="Stage II  Single-GPU Optimization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=top;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="560" y="360" width="440" height="300" as="geometry"/></mxCell>
+        <mxCell id="single_a" value="GPU-Resident End-to-End Path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontSize=15;" vertex="1" parent="1"><mxGeometry x="605" y="410" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="single_b" value="Asynchronous I/O–Compute Pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontSize=15;" vertex="1" parent="1"><mxGeometry x="795" y="410" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="single_c" value="Backend Refactoring&#xa;RAPIDS / FAISS-GPU" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontSize=15;" vertex="1" parent="1"><mxGeometry x="605" y="520" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="single_d" value="Data Path Compression&#xa;Less CPU↔GPU Transfer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8de;strokeColor=#d6b656;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="795" y="520" width="155" height="70" as="geometry"/></mxCell>
+
+        <mxCell id="multi_group" value="Stage III  Multi-GPU Scaling" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=top;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="1040" y="360" width="440" height="300" as="geometry"/></mxCell>
+        <mxCell id="multi_a" value="Data Parallelism + Index Replication" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1085" y="410" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="multi_b" value="CPU Control Plane&#xa;Load Balancing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1275" y="410" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="multi_c" value="GPU-side Merge + NCCL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1085" y="520" width="155" height="70" as="geometry"/></mxCell>
+        <mxCell id="multi_d" value="Topology-aware I/O Lane Control" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#b85450;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1275" y="520" width="155" height="70" as="geometry"/></mxCell>
+
+        <mxCell id="eval_group" value="Stage IV  Unified Evaluation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=16;fontStyle=1;align=center;verticalAlign=top;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="300" y="710" width="1000" height="120" as="geometry"/></mxCell>
+        <mxCell id="eval_text" value="Detection Effectiveness  |  Candidate Quality  |  Single-GPU Throughput  |  Multi-GPU Scalability  |  CPU/GPU Utilization  |  I/O Path  |  Tail Latency" style="text;html=1;strokeColor=none;fillColor=none;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="360" y="755" width="880" height="30" as="geometry"/></mxCell>
+        <mxCell id="eval_text2" value="Real / Semi-real 1M Data   +   Synthetic 10M / 100M Data" style="text;html=1;strokeColor=none;fillColor=none;fontSize=16;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="430" y="790" width="740" height="24" as="geometry"/></mxCell>
+
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="goal" target="f0"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="f0" target="fusion_group"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="fusion_group" target="single_group"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="single_group" target="multi_group"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="fusion_group" target="eval_group"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="single_group" target="eval_group"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="multi_group" target="eval_group"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

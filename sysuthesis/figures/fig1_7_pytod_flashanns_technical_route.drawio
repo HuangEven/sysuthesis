@@ -1,0 +1,163 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.1.2 Chrome/138.0.7204.243 Electron/37.4.0 Safari/537.36" version="28.1.2">
+  <diagram id="fig1-7-pytod-flashanns-route" name="Page-1">
+    <mxGraphModel dx="2102" dy="1311" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Pytod-flashanns Technical Route" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=3;fontSize=24;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="430" y="30" width="740" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="host" value="Host-side Preparation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;fontSize=17;fontStyle=1;verticalAlign=top;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="60" y="160" width="290" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="host1" value="Financial Records&#xa;Transactions / Behaviors / Context" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="90" y="220" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="host2" value="Schema Align / Feature Packing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="90" y="335" width="230" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="host3" value="Pinned Host Buffer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="90" y="440" width="230" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="host4" value="Control / Logging / Final D2H" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="90" y="545" width="230" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion" value="Fusion Coordination" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=17;fontStyle=1;verticalAlign=top;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="390" y="160" width="250" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion1" value="Query Tensor Organization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="425" y="220" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion2" value="Recall → Re-score → Rank" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="425" y="325" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion3" value="Candidate Tensor Routing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="425" y="430" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion4" value="Minimal Host-device Boundary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf4ff;strokeColor=#6c8ebf;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="425" y="545" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="flash" value="FlashANNS Retrieval Path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=17;fontStyle=1;verticalAlign=top;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="680" y="160" width="360" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="flash1" value="Graph / Vector Index" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="715" y="220" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="flash2" value="Dependency-relaxed&#xa;Async Pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="875" y="220" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="flash3" value="Warp-level SSD Access" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="715" y="335" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="flash4" value="Double Buffer A / B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="875" y="335" width="130" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="flash5" value="Bounded Candidate Tensor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf4e8;strokeColor=#82b366;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="790" y="470" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="flash6" value="CPU-managed I/O Queue + Completion Signals" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="745" y="585" width="230" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod" value="PyTOD Tensorized Scoring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=17;fontStyle=1;verticalAlign=top;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="1080" y="160" width="340" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" value="BTO / FO Abstraction" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="1115" y="220" width="120" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="Tensorized OD Operators" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="1265" y="220" width="120" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="Automatic Batching" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="1115" y="335" width="120" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" value="Operator Fusion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;fontSize=15;" parent="1" vertex="1">
+          <mxGeometry x="1265" y="335" width="120" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" value="Provable Quantization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#b85450;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="1190" y="445" width="120" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" value="Score Tensor / Risk Ranking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdecea;strokeColor=#b85450;fontSize=15;fontStyle=1;" parent="1" vertex="1">
+          <mxGeometry x="1155" y="585" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime" value="Runtime / Backend Support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#999999;strokeWidth=2;fontSize=17;fontStyle=1;verticalAlign=top;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="620" y="792" width="860" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime_text" value="PyTorch  |  CUDA  |  RAPIDS  |  FAISS-GPU  |  RMM  |  Async Streams  |  Tensor Kernels" style="text;html=1;strokeColor=none;fillColor=none;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="570" y="825" width="760" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="load" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="host1" target="host2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="pack" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="host2" target="host3" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="Async H2D" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="host3" target="fusion1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="370" y="467" />
+              <mxPoint x="370" y="247" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" value="issue" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="fusion1" target="flash1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="route" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="fusion2" target="flash5" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="515" y="410" />
+              <mxPoint x="860" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="candidate tensor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="flash5" target="p1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="500" />
+              <mxPoint x="1060" y="247" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="score / rank" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;endArrow=block;endFill=1;" parent="1" source="p6" target="host4" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1250" y="680" />
+              <mxPoint x="205" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="control" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" parent="1" source="host4" target="fusion4" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" parent="1" source="flash2" target="flash6" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1010" y="247" />
+              <mxPoint x="1010" y="615" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="notify" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;fontSize=13;dashed=1;endArrow=block;endFill=1;strokeColor=#666666;" parent="1" source="flash6" target="flash4" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="940" y="550" />
+              <mxPoint x="940" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;strokeColor=#999999;" parent="1" source="runtime" target="flash_group_dummy" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flash_group_dummy" value="" style="ellipse;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="852" y="650" width="1" height="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;dashed=1;endArrow=block;endFill=1;strokeColor=#999999;" parent="1" source="runtime" target="pytod_group_dummy" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pytod_group_dummy" value="" style="ellipse;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="1230" y="650" width="1" height="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
