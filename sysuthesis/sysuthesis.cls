@@ -953,7 +953,31 @@
 % 中文字体
 \ifsysu@cjk@font@auto
   \ifsysu@fontset@mac
-    \sysusetup{cjk-font = mac}
+    \IfFontExistsTF{Songti SC}{
+      \IfFontExistsTF{Heiti SC}{
+        \IfFontExistsTF{STFangsong}{
+          \IfFontExistsTF{Kaiti SC}{
+            \IfFontExistsTF{Baoli SC}{
+              \IfFontExistsTF{Yuanyi SC}{
+                \sysusetup{cjk-font = mac}
+              }{
+                \sysusetup{cjk-font = fandol}
+              }
+            }{
+              \sysusetup{cjk-font = fandol}
+            }
+          }{
+            \sysusetup{cjk-font = fandol}
+          }
+        }{
+          \sysusetup{cjk-font = fandol}
+        }
+      }{
+        \sysusetup{cjk-font = fandol}
+      }
+    }{
+      \sysusetup{cjk-font = fandol}
+    }
   \else
     \ifsysu@fontset@windows
       \sysusetup{cjk-font = windows}
@@ -987,8 +1011,8 @@
   \setCJKmainfont{Songti SC}[
     UprightFont    = * Light,
     BoldFont       = * Bold,
-    ItalicFont     = Kaiti SC Regular,
-    BoldItalicFont = Kaiti SC Bold,
+    ItalicFont     = Kaiti SC,
+    BoldItalicFont = Kaiti SC,
   ]%
   \setCJKsansfont{Heiti SC}[
     UprightFont    = * Light,
