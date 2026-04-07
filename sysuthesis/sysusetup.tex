@@ -41,6 +41,7 @@
 
 % 表格增强（列格式控制）
 \usepackage{array}
+\usepackage{ragged2e}
 
 % 跨页表格
 \usepackage{longtable}
@@ -109,17 +110,35 @@
   }%
 }
 
+% 统一表格列类型，中文英文长内容均可在单元格内自然换行
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash\hspace{0pt}}p{#1}}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash\hspace{0pt}}X}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash\hspace{0pt}}p{#1}}
+
 % 统一表格风格与版心约束
-\captionsetup[table]{font=small, skip=6pt}
+\captionsetup[table]{font=footnotesize, skip=6pt}
 \AtBeginEnvironment{table}{%
-  \small
+  \footnotesize
   \setlength{\tabcolsep}{3.5pt}%
   \renewcommand{\arraystretch}{1.18}%
 }
-\AtBeginEnvironment{longtable}{%
-  \small
+\AtBeginEnvironment{tabular}{%
+  \footnotesize
   \setlength{\tabcolsep}{3.5pt}%
   \renewcommand{\arraystretch}{1.18}%
+  \setlength{\emergencystretch}{1em}%
+}
+\AtBeginEnvironment{tabularx}{%
+  \footnotesize
+  \setlength{\tabcolsep}{3.5pt}%
+  \renewcommand{\arraystretch}{1.18}%
+  \setlength{\emergencystretch}{1em}%
+}
+\AtBeginEnvironment{longtable}{%
+  \footnotesize
+  \setlength{\tabcolsep}{3.5pt}%
+  \renewcommand{\arraystretch}{1.18}%
+  \setlength{\emergencystretch}{1em}%
 }
 
 % hyperref 宏包在最后调用

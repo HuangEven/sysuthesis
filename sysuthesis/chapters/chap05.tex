@@ -32,7 +32,7 @@
   \centering
   \small
   \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{p{1.9cm}p{2.8cm}p{4.0cm}p{3.2cm}p{3.0cm}p{1.8cm}}
+    \begin{tabular}{P{1.9cm}P{2.8cm}P{4.0cm}P{3.2cm}P{3.0cm}P{1.8cm}}
       \toprule
       方案 & 核心思路 & 适用条件 & 优势 & 代价 & 定位 \\
       \midrule
@@ -106,11 +106,12 @@
   \label{tab:control-vs-data-plane}
   \centering
   \footnotesize
-  \setlength{\tabcolsep}{1.8pt}
-  \renewcommand{\arraystretch}{1.16}
-    \begin{tabular}{>{\raggedright\arraybackslash}p{0.72cm}>{\raggedright\arraybackslash}p{2.10cm}>{\raggedright\arraybackslash}p{3.85cm}>{\raggedright\arraybackslash}p{2.95cm}>{\raggedright\arraybackslash}p{3.30cm}}
+  \setlength{\tabcolsep}{1.4pt}
+  \renewcommand{\arraystretch}{1.22}
+  \begin{adjustbox}{max width=\linewidth}
+    \begin{tabular}{P{0.82cm}P{2.35cm}P{3.95cm}P{2.55cm}P{3.10cm}}
       \toprule
-      类别 & 组件 & 职责 & 关键参数 & 备注 \\
+      \makecell[c]{类别} & \makecell[c]{组件} & \makecell[c]{职责} & \makecell[c]{关键\\参数} & \makecell[c]{备注} \\
       \midrule
       控制面 &
       \makecell[l]{请求队列与\\batching 调度器} &
@@ -149,6 +150,7 @@
       \makecell[l]{与拓扑感知绑定策略联动；\\参数过大时会拉高 p99，\\过小则会限制吞吐} \\
       \bottomrule
     \end{tabular}
+  \end{adjustbox}
 \end{table}
 
 \section{跨卡归并场景下的 GPU 侧归并与 NCCL 通信}
@@ -196,7 +198,7 @@
   \centering
   \small
   \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{p{0.8cm}p{2.6cm}p{1.0cm}p{1.9cm}p{1.0cm}p{1.0cm}p{0.7cm}p{2.2cm}p{1.8cm}p{2.7cm}}
+    \begin{tabular}{P{0.8cm}P{2.6cm}P{1.0cm}P{1.9cm}P{1.0cm}P{1.0cm}P{0.7cm}P{2.2cm}P{1.8cm}P{2.7cm}}
       \toprule
       GPU数 & 方案 & 数据规模 & 索引组织 & 批大小 & 候选数 & $k$ & 归并路径 & I/O 绑定 & 备注 \\
       \midrule
@@ -243,7 +245,7 @@
   \centering
   \small
   \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{p{0.8cm}p{2.6cm}p{1.0cm}p{1.6cm}p{1.8cm}p{1.8cm}p{1.6cm}p{1.6cm}}
+    \begin{tabular}{P{0.8cm}P{2.6cm}P{1.0cm}P{1.6cm}P{1.8cm}P{1.8cm}P{1.6cm}P{1.6cm}}
       \toprule
       GPU数 & 方案 & 数据规模 & QPS & avg\_latency\_ms & p99\_latency\_ms & CPU利用率(\%) & GPU利用率(\%) \\
       \midrule
