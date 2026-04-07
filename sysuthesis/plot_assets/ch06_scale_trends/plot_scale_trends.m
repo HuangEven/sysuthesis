@@ -16,7 +16,7 @@ end
 scale_labels = {'1M', '10M', '50M', '100M'};
 metrics = {'qps', 'p99_latency_ms', 'pr_auc'};
 ylabels = {'QPS', 'Latency (ms)', 'PR-AUC'};
-y_lims = [0 4700; 0 140; 0.885 0.935];
+y_lims = [0 4700; 0 140; 0.86 0.935];
 markers = {'o', 's'};
 line_styles = {'-', '--'};
 
@@ -75,7 +75,7 @@ switch metric
     case 'p99_latency_ms'
         offset = 2.0;
     otherwise
-        offset = 0.00045;
+        offset = 0.0004;
 end
 end
 

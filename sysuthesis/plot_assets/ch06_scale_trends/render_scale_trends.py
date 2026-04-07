@@ -25,7 +25,7 @@ def metric_offset(metric: str) -> float:
         return 100
     if metric == "p99_latency_ms":
         return 2.0
-    return 0.00045
+    return 0.0004
 
 
 def metric_format(metric: str) -> str:
@@ -38,7 +38,7 @@ def main() -> None:
     metrics = [
         ("qps", "QPS", (0, 4700)),
         ("p99_latency_ms", "Latency (ms)", (0, 140)),
-        ("pr_auc", "PR-AUC", (0.885, 0.935)),
+        ("pr_auc", "PR-AUC", (0.86, 0.935)),
     ]
     line_styles = ["-", "--"]
     markers = ["o", "s"]

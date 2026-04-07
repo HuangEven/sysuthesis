@@ -74,16 +74,33 @@ def render_tradeoff(df: pd.DataFrame) -> None:
             linewidth=1.4,
             label=row["scheme_desc"] if "scheme_desc" in df.columns else row["scheme"],
         )
-        ax.text(row["qps"] + 70, row["pr_auc"] + 0.0009, f"{row['pr_auc']:.4f} / {row['qps']:.2f}", fontsize=9.2)
+        xoff, yoff, halign = tradeoff_label_offset(idx)
+        ax.text(
+            row["qps"] + xoff,
+            row["pr_auc"] + yoff,
+            f"{row['pr_auc']:.4f} / {row['qps']:.2f}",
+            fontsize=9.2,
+            ha=halign,
+        )
     ax.set_xlabel("QPS", fontsize=13)
     ax.set_ylabel("PR-AUC", fontsize=13)
     ax.set_xlim(2500, 4800)
     ax.set_ylim(0.83, 0.936)
     apply_axis_style(ax)
-    ax.legend(loc="lower right", frameon=False, fontsize=10.5)
+    ax.legend(loc="lower left", frameon=False, fontsize=10.5)
     fig.tight_layout()
     fig.savefig(ROOT / "fig6_6_fusion_tradeoff.png", bbox_inches="tight")
     plt.close(fig)
+
+
+def tradeoff_label_offset(index: int) -> tuple[float, float, str]:
+    if index == 0:
+        return 70, 0.0009, "left"
+    if index == 1:
+        return -70, 0.0006, "right"
+    if index == 2:
+        return 70, 0.0009, "left"
+    return 70, 0.0009, "left"
 
 
 def main() -> None:

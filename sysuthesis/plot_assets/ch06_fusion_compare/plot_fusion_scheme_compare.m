@@ -55,8 +55,9 @@ for i = 1:height(tbl)
         'MarkerFaceColor', 'w', ...
         'LineWidth', 1.4, ...
         'DisplayName', legend_labels{i});
-        text(tbl.qps(i) + 70, tbl.pr_auc(i) + 0.0009, sprintf('%.4f / %.2f', tbl.pr_auc(i), tbl.qps(i)), ...
-            'FontName', 'Times New Roman', 'FontSize', 9.6);
+        [xoff, yoff, halign] = tradeoff_label_offset(i);
+        text(tbl.qps(i) + xoff, tbl.pr_auc(i) + yoff, sprintf('%.4f / %.2f', tbl.pr_auc(i), tbl.qps(i)), ...
+            'FontName', 'Times New Roman', 'FontSize', 9.6, 'HorizontalAlignment', halign);
 end
 
 function labels = wrap_labels(values)
@@ -76,7 +77,7 @@ xlabel(ax3, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax3, 'PR-AUC', 'FontName', 'Times New Roman', 'FontSize', 13);
 xlim(ax3, [2500, 4800]);
 ylim(ax3, [0.83, 0.936]);
-legend(ax3, 'Location', 'southeast', 'Box', 'off', 'FontName', 'Times New Roman');
+legend(ax3, 'Location', 'southwest', 'Box', 'off', 'FontName', 'Times New Roman');
 exportgraphics(fig3, fullfile(root_dir, 'fig6_6_fusion_tradeoff.png'), 'Resolution', 220);
 close(fig3);
 end
@@ -100,5 +101,18 @@ for i = 1:numel(values)
         'VerticalAlignment', 'bottom', ...
         'FontName', 'Times New Roman', ...
         'FontSize', 9.8);
+end
+end
+
+function [xoff, yoff, halign] = tradeoff_label_offset(index)
+switch index
+    case 1
+        xoff = 70; yoff = 0.0009; halign = 'left';
+    case 2
+        xoff = -70; yoff = 0.0006; halign = 'right';
+    case 3
+        xoff = 70; yoff = 0.0009; halign = 'left';
+    otherwise
+        xoff = 70; yoff = 0.0009; halign = 'left';
 end
 end
