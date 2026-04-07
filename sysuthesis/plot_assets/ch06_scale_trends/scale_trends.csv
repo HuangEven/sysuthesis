@@ -1,8 +1,8 @@
 scheme,scheme_desc,data_scale,qps,p99_latency_ms,pr_auc,topk_overlap
-Full-scoring baseline,Full-scoring baseline,1M,2700.00,32.50,0.9320,1.0000
-Full-scoring baseline,Full-scoring baseline,10M,1540.00,52.00,0.9295,1.0000
-Full-scoring baseline,Full-scoring baseline,50M,640.00,87.50,0.9250,1.0000
-Full-scoring baseline,Full-scoring baseline,100M,245.00,134.00,0.9205,1.0000
+Initial fusion pipeline,Initial fusion pipeline,1M,3490.00,31.50,0.8830,0.8550
+Initial fusion pipeline,Initial fusion pipeline,10M,1980.00,50.50,0.8790,0.8440
+Initial fusion pipeline,Initial fusion pipeline,50M,760.00,89.50,0.8735,0.8290
+Initial fusion pipeline,Initial fusion pipeline,100M,270.00,136.50,0.8660,0.8120
 Full fusion pipeline,Full fusion pipeline,1M,4280.00,25.80,0.9060,0.8980
 Full fusion pipeline,Full fusion pipeline,10M,2440.00,42.20,0.9025,0.8890
 Full fusion pipeline,Full fusion pipeline,50M,930.00,76.80,0.8975,0.8740
