@@ -356,12 +356,13 @@
   \caption{核心结果汇总}
   \label{tab:core-summary}
   \centering
-  \small
-  \renewcommand{\arraystretch}{1.15}
+  \footnotesize
+  \setlength{\tabcolsep}{2.0pt}
+  \renewcommand{\arraystretch}{1.18}
   \begin{adjustbox}{max width=\linewidth}
-  \begin{tabular}{P{2.5cm}P{2.2cm}P{3.0cm}P{5.2cm}P{2.0cm}}
+  \begin{tabular}{P{2.3cm}P{2.0cm}P{2.6cm}P{5.8cm}P{1.6cm}}
     \toprule
-    结果主题 & 代表方案 & 核心指标 & 关键结果 & 支撑图表 \\
+    结果主题 & 代表方案 & 核心指标 & 关键结果 & \makecell[c]{支撑\\图表} \\
     \midrule
     融合架构总体有效性 & 完整融合 & PR-AUC, QPS & 在 PR-AUC 仅略低于全量评分的前提下，QPS 相比全量评分显著提升，说明``候选召回 + 张量化评分''能够兼顾效果与吞吐 & 图~\ref{fig:fusion-vs-baselines}--图~\ref{fig:multi-gpu-scaling} \\
     单卡链路优化收益 & 单卡优化 & QPS, p99 Latency, CPU Utilization & GPU 主导执行链路显著压缩阶段边界开销，p99 延迟和 CPU 负载同步下降，端到端吞吐明显提升 & 图~\ref{fig:single-stage-breakdown}--图~\ref{fig:single-gpu-overview}，图~\ref{fig:scale-comparison} \\
@@ -460,10 +461,11 @@
   \caption{研究局限性与影响范围}
   \label{tab:limitations}
   \centering
-  \small
-  \renewcommand{\arraystretch}{1.15}
+  \footnotesize
+  \setlength{\tabcolsep}{1.9pt}
+  \renewcommand{\arraystretch}{1.18}
   \begin{adjustbox}{max width=\linewidth}
-  \begin{tabular}{P{2.2cm}P{2.5cm}P{4.6cm}P{2.6cm}P{2.9cm}}
+  \begin{tabular}{P{1.9cm}P{2.2cm}P{4.8cm}P{2.3cm}P{3.4cm}}
     \toprule
     局限性 & 影响因素 & 原因分析 & 影响范围 & 应对策略 \\
     \midrule

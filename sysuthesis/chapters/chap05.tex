@@ -30,27 +30,29 @@
   \caption{多 GPU 扩展方案适用条件}
   \label{tab:primary-vs-fallback}
   \centering
-  \small
+  \footnotesize
+  \setlength{\tabcolsep}{1.9pt}
+  \renewcommand{\arraystretch}{1.18}
   \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{P{1.9cm}P{2.8cm}P{4.0cm}P{3.2cm}P{3.0cm}P{1.8cm}}
+    \begin{tabular}{P{1.75cm}P{2.55cm}P{3.85cm}P{3.05cm}P{2.85cm}P{1.45cm}}
       \toprule
       方案 & 核心思路 & 适用条件 & 优势 & 代价 & 定位 \\
       \midrule
-      replicated &
+      \makecell[l]{replicated} &
       完整索引复制到每张 GPU，按查询级或微批级并行分发任务，每卡独立完成候选召回、异常评分与局部结果输出闭环 &
       单卡可容纳完整索引副本；系统目标以高吞吐和低尾延迟为主；允许用显存换取调度简单性和扩展稳定性 &
       数据平面最清晰；CPU 仅保留控制面职责；几乎不需要跨卡归并；与单卡优化链路复用度最高 &
       显存占用高；索引构建与更新需要维护多份副本；当索引继续增大时可扩展性受显存约束 &
       主方案 \\
       \midrule
-      sharded+GPU 归并 &
+      \makecell[l]{sharded +\\GPU 归并} &
       索引按卡分片，各卡先完成局部召回或局部评分，再通过 NCCL 等通信机制在 GPU 侧完成归并和最终结果合并 &
       完整索引无法复制到单卡；业务必须覆盖更大索引容量；可以接受额外的设备间通信与 GPU 侧归并复杂度 &
       支持更大索引规模；CPU 不再回收大规模候选集合；相较 CPU 聚合路径尾延迟更可控 &
       归并逻辑更复杂；通信开销与 stream 协调成本更高；性能更容易受到拓扑与 I/O 路径限制 &
       兜底方案 \\
       \midrule
-      CPU 聚合 &
+      \makecell[l]{CPU\\聚合} &
       各 GPU 仅输出局部结果，统一回传 CPU 进行排序、合并与最终输出，CPU 重新承担跨卡聚合职责 &
       主要用于原型验证、调试、小规模实验或需要显式检查中间结果的离线分析场景 &
       实现路径最直接；中间结果易于观察；便于快速构造对比基线 &
@@ -191,23 +193,25 @@
   \caption{多 GPU 扩展结果汇总}
   \label{tab:multi-gpu-summary}
   \centering
-  \small
+  \footnotesize
+  \setlength{\tabcolsep}{1.8pt}
+  \renewcommand{\arraystretch}{1.18}
   \begin{adjustbox}{max width=\linewidth}
-    \begin{tabular}{P{0.8cm}P{2.6cm}P{1.0cm}P{1.6cm}P{1.8cm}P{1.8cm}P{1.6cm}P{1.6cm}}
+    \begin{tabular}{P{0.75cm}P{2.45cm}P{0.95cm}P{1.35cm}P{1.55cm}P{1.55cm}P{1.45cm}P{1.45cm}}
       \toprule
-      GPU数 & 方案 & 数据规模 & QPS & avg\_latency\_ms & p99\_latency\_ms & CPU利用率(\%) & GPU利用率(\%) \\
+      GPU数 & 方案 & 数据规模 & QPS & \makecell[c]{avg\\latency\\(ms)} & \makecell[c]{p99\\latency\\(ms)} & \makecell[c]{CPU\\利用率(\%)} & \makecell[c]{GPU\\利用率(\%)} \\
       \midrule
       1 & Replicated & 10M & 12640.00 & 10.80 & 16.20 & 34.00 & 69.00 \\
       2 & Replicated & 10M & 24760.00 & 9.10 & 14.60 & 30.50 & 75.50 \\
       4 & Replicated & 10M & 47620.00 & 8.40 & 12.90 & 26.50 & 82.00 \\
-      4 & Local scoring + GPU merge & 100M & 40180.00 & 11.60 & 19.40 & 32.00 & 78.00 \\
-      4 & Local scoring + CPU aggregation & 100M & 28940.00 & 15.80 & 28.60 & 49.00 & 64.50 \\
-      2 & Topology-aware binding & 100M & 24780.00 & 11.40 & 18.40 & 31.00 & 74.00 \\
-      4 & Topology-aware binding & 100M & 47560.00 & 13.20 & 22.10 & 29.00 & 80.00 \\
-      2 & Shared-path conflict & 100M & 21920.00 & 14.80 & 24.80 & 36.00 & 67.50 \\
-      4 & Shared-path conflict & 100M & 33140.00 & 24.20 & 41.60 & 43.00 & 58.00 \\
+      4 & \makecell[l]{Local scoring +\\GPU merge} & 100M & 40180.00 & 11.60 & 19.40 & 32.00 & 78.00 \\
+      4 & \makecell[l]{Local scoring +\\CPU aggregation} & 100M & 28940.00 & 15.80 & 28.60 & 49.00 & 64.50 \\
+      2 & \makecell[l]{Topology-aware\\binding} & 100M & 24780.00 & 11.40 & 18.40 & 31.00 & 74.00 \\
+      4 & \makecell[l]{Topology-aware\\binding} & 100M & 47560.00 & 13.20 & 22.10 & 29.00 & 80.00 \\
+      2 & \makecell[l]{Shared-path\\conflict} & 100M & 21920.00 & 14.80 & 24.80 & 36.00 & 67.50 \\
+      4 & \makecell[l]{Shared-path\\conflict} & 100M & 33140.00 & 24.20 & 41.60 & 43.00 & 58.00 \\
       \midrule
-      \multicolumn{8}{p{13.0cm}}{\footnotesize 注：结果展示遵循与表~\ref{tab:multi-gpu-exp-setup} 相同的多 GPU 统一规模口径。受版面与结果表达重点限制，表中列出的是 10M replicated 扩展结果和 100M 压力场景结果，用于回答主方案、兜底路径与共享路径冲突三类设计问题。} \\
+      \multicolumn{8}{P{12.2cm}}{\footnotesize 注：结果展示遵循与表~\ref{tab:multi-gpu-exp-setup} 相同的多 GPU 统一规模口径。受版面与结果表达重点限制，表中列出的是 10M replicated 扩展结果和 100M 压力场景结果，用于回答主方案、兜底路径与共享路径冲突三类设计问题。} \\
       \bottomrule
     \end{tabular}
   \end{adjustbox}
