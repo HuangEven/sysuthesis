@@ -21,8 +21,8 @@ xticks(ax1, 1:height(tbl));
 xticklabels(ax1, scheme_labels);
 xlabel(ax1, 'Validation scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax1, 'PR-AUC', 'FontName', 'Times New Roman', 'FontSize', 13);
-ylim(ax1, [0.75, 0.96]);
-annotate_single_series(ax1, tbl.pr_auc, 0.006, '%.4f');
+ylim(ax1, [0.82, 0.94]);
+annotate_single_series(ax1, tbl.pr_auc, 0.004, '%.4f');
 exportgraphics(fig1, fullfile(root_dir, 'fig6_4_fusion_accuracy.png'), 'Resolution', 220);
 close(fig1);
 
@@ -35,8 +35,8 @@ xticks(ax2, 1:height(tbl));
 xticklabels(ax2, scheme_labels);
 xlabel(ax2, 'Validation scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax2, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);
-ylim(ax2, [0, 10800]);
-annotate_single_series(ax2, tbl.qps, 260, '%.2f');
+ylim(ax2, [0, 5200]);
+annotate_single_series(ax2, tbl.qps, 140, '%.2f');
 exportgraphics(fig2, fullfile(root_dir, 'fig6_5_fusion_qps.png'), 'Resolution', 220);
 close(fig2);
 
@@ -55,8 +55,8 @@ for i = 1:height(tbl)
         'MarkerFaceColor', 'w', ...
         'LineWidth', 1.4, ...
         'DisplayName', legend_labels{i});
-    text(tbl.qps(i) + 120, tbl.pr_auc(i) + 0.0012, sprintf('%.4f / %.2f', tbl.pr_auc(i), tbl.qps(i)), ...
-        'FontName', 'Times New Roman', 'FontSize', 9.6);
+        text(tbl.qps(i) + 70, tbl.pr_auc(i) + 0.0009, sprintf('%.4f / %.2f', tbl.pr_auc(i), tbl.qps(i)), ...
+            'FontName', 'Times New Roman', 'FontSize', 9.6);
 end
 
 function labels = wrap_labels(values)
@@ -74,8 +74,8 @@ end
 apply_axis_style(ax3);
 xlabel(ax3, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax3, 'PR-AUC', 'FontName', 'Times New Roman', 'FontSize', 13);
-xlim(ax3, [1000, 10400]);
-ylim(ax3, [0.79, 0.945]);
+xlim(ax3, [2500, 4800]);
+ylim(ax3, [0.83, 0.936]);
 legend(ax3, 'Location', 'southeast', 'Box', 'off', 'FontName', 'Times New Roman');
 exportgraphics(fig3, fullfile(root_dir, 'fig6_6_fusion_tradeoff.png'), 'Resolution', 220);
 close(fig3);

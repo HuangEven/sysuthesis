@@ -38,9 +38,9 @@ def main() -> None:
     df = pd.read_csv(CSV_PATH)
     labels = scenario_labels(df)
     metrics = [
-        ("qps", "QPS", (0, 52000), 850, "white"),
-        ("p99_latency_ms", "Latency (ms)", (0, 75), 1.2, "#D1D1D1"),
-        ("cpu_util", "CPU Utilization (%)", (0, 70), 1.0, "#A6A6A6"),
+        ("qps", "QPS", (0, 15000), 220, "white"),
+        ("p99_latency_ms", "Latency (ms)", (0, 75), 1.0, "#D1D1D1"),
+        ("cpu_util", "CPU Utilization (%)", (0, 70), 0.9, "#A6A6A6"),
     ]
 
     fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.6), dpi=220)

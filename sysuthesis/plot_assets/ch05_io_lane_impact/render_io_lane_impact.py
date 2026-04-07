@@ -47,8 +47,8 @@ def main() -> None:
     colors = ["white", "#D1D1D1"]
 
     for ax, values, ylabel, ylim, offset in [
-        (axes[0], qps_values, "QPS", (0, 52000), 650),
-        (axes[1], p99_values, "Latency (ms)", (0, 48), 0.85),
+        (axes[0], qps_values, "QPS", (0, 15000), 220),
+        (axes[1], p99_values, "Latency (ms)", (0, 60), 0.95),
     ]:
         for idx, scheme in enumerate(schemes):
             bars = ax.bar(

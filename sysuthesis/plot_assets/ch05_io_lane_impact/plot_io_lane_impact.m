@@ -42,7 +42,7 @@ ylabel(ax1, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);
 xlabel(ax1, 'GPU Configuration', 'FontName', 'Times New Roman', 'FontSize', 13);
 legend(ax1, legend_labels, 'Location', 'northwest', 'Box', 'off', 'FontName', 'Times New Roman');
 ylim(ax1, [0, 52000]);
-annotate_bars(ax1, hb1, qps_values, 650);
+annotate_bars(ax1, hb1, qps_values, 220);
 
 nexttile;
 ax2 = gca;
@@ -53,8 +53,8 @@ set(ax2, 'XTickLabel', labels);
 ylabel(ax2, 'Latency (ms)', 'FontName', 'Times New Roman', 'FontSize', 13);
 xlabel(ax2, 'GPU Configuration', 'FontName', 'Times New Roman', 'FontSize', 13);
 legend(ax2, legend_labels, 'Location', 'northwest', 'Box', 'off', 'FontName', 'Times New Roman');
-ylim(ax2, [0, 48]);
-annotate_bars(ax2, hb2, p99_values, 0.85);
+ylim(ax2, [0, 60]);
+annotate_bars(ax2, hb2, p99_values, 0.95);
 
 exportgraphics(fig, out_path, 'Resolution', 220);
 close(fig);

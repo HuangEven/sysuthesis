@@ -1,5 +1,5 @@
 scheme,scheme_desc,query_prep,ann_recall,pack_candidates,pytod_score,output,latency_ms
-Original baseline,Original pipeline baseline,5.60,15.80,20.70,12.50,3.90,58.50
-Recall-accelerated,Recall acceleration only,5.00,10.60,18.20,12.00,3.50,49.30
-GPU handoff,GPU-resident recall-to-score handoff,3.20,9.10,8.60,10.10,2.40,33.40
-Full optimization,Full single-GPU optimization,2.20,7.40,4.00,8.00,1.60,23.20
+Original baseline,Original pipeline baseline,6.60,18.50,23.90,14.30,5.40,68.70
+Recall-accelerated,Recall acceleration only,6.30,17.40,22.10,14.05,5.15,65.00
+GPU handoff,GPU-resident recall-to-score handoff,5.75,16.30,18.60,13.40,4.15,58.20
+Full optimization,Full single-GPU optimization,4.95,15.30,15.10,12.60,3.35,51.30

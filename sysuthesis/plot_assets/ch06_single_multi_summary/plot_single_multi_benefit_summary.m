@@ -9,8 +9,8 @@ tbl = readtable(csv_path, 'TextType', 'string');
 labels = scenario_labels(tbl.scheme);
 metrics = {'QPS', 'Latency (ms)', 'CPU Utilization (%)'};
 values = [tbl.qps, tbl.p99_latency_ms, tbl.cpu_util];
-offsets = [850, 1.2, 1.0];
-y_lims = [0 52000; 0 75; 0 70];
+offsets = [220, 1.0, 0.9];
+y_lims = [0 15000; 0 75; 0 70];
 
 fig = figure('Color', 'w', 'Position', [120, 120, 1140, 460]);
 tiledlayout(fig, 1, 3, 'Padding', 'compact', 'TileSpacing', 'compact');

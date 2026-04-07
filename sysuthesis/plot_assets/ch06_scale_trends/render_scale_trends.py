@@ -22,10 +22,10 @@ def style_axes(ax: plt.Axes) -> None:
 
 def metric_offset(metric: str) -> float:
     if metric == "qps":
-        return 220
+        return 100
     if metric == "p99_latency_ms":
-        return 2.4
-    return 0.00035
+        return 2.0
+    return 0.00045
 
 
 def metric_format(metric: str) -> str:
@@ -36,9 +36,9 @@ def main() -> None:
     df = pd.read_csv(CSV_PATH)
     scales = ["1M", "10M", "50M", "100M"]
     metrics = [
-        ("qps", "QPS", (0, 10500)),
-        ("p99_latency_ms", "Latency (ms)", (0, 115)),
-        ("pr_auc", "PR-AUC", (0.918, 0.9345)),
+        ("qps", "QPS", (0, 4700)),
+        ("p99_latency_ms", "Latency (ms)", (0, 140)),
+        ("pr_auc", "PR-AUC", (0.885, 0.935)),
     ]
     line_styles = ["-", "--"]
     markers = ["o", "s"]

@@ -36,7 +36,7 @@ for i = 1:numel(schemes)
         'DisplayName', schemes(i));
 
     for j = 1:numel(x)
-        text(x(j), y(j) + 350, sprintf('%.2f', y(j)), ...
+        text(x(j), y(j) + 180, sprintf('%.2f', y(j)), ...
             'HorizontalAlignment', 'center', ...
             'VerticalAlignment', 'bottom', ...
             'FontName', 'Times New Roman', ...
@@ -57,7 +57,7 @@ ax.GridAlpha = 0.35;
 
 xlim(ax, [0.8, 4.2]);
 xticks(ax, [1, 2, 4]);
-ylim(ax, [11000, 50000]);
+ylim(ax, [0, 15000]);
 
 xlabel(ax, 'Number of GPUs', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax, 'QPS', 'FontName', 'Times New Roman', 'FontSize', 13);

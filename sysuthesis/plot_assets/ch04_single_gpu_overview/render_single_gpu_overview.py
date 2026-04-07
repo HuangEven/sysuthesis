@@ -29,10 +29,10 @@ def style_axes(ax: plt.Axes) -> None:
 def main() -> None:
     df = pd.read_csv(CSV_PATH)
     metrics = [
-        ("qps", "QPS", (0, 7000), 120.0),
-        ("p99_ms", "Latency (ms)", (0, 75), 1.6),
-        ("pci_transfer_count", "PCIe Transfer Count", (0, 7.2), 0.16),
-        ("gpu_util", "GPU Utilization (%)", (0, 95), 1.4),
+        ("qps", "QPS", (0, 5200), 90.0),
+        ("p99_ms", "Latency (ms)", (0, 75), 1.4),
+        ("pci_transfer_count", "PCIe Transfer Count", (0, 7.0), 0.14),
+        ("gpu_util", "GPU Utilization (%)", (0, 75), 1.2),
     ]
 
     fig, axes = plt.subplots(2, 2, figsize=(11.2, 6.8), dpi=220)

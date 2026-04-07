@@ -38,7 +38,7 @@ def wrapped_labels(values: pd.Series, width: int = 18) -> list[str]:
 def render(csv_path: Path, out_path: Path) -> None:
     df = pd.read_csv(csv_path)
     x = np.arange(len(df))
-    width = 0.66
+    width = 0.64
 
     fig, ax = plt.subplots(figsize=(10.2, 5.6), dpi=220)
     bottom = np.zeros(len(df))
@@ -78,9 +78,9 @@ def render(csv_path: Path, out_path: Path) -> None:
 
     totals = df["latency_ms"].values
     for idx, total in enumerate(totals):
-        ax.text(idx, total + totals.max() * 0.03, f"{total:.2f}", ha="center", va="bottom", fontsize=10.2)
+        ax.text(idx, total + totals.max() * 0.025, f"{total:.2f}", ha="center", va="bottom", fontsize=10.2)
 
-    ax.set_ylim(0, totals.max() * 1.18)
+    ax.set_ylim(0, totals.max() * 1.16)
 
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(out_path, bbox_inches="tight")

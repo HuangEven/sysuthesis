@@ -8,8 +8,8 @@ out_path = fullfile(root_dir, 'fig4_16_single_gpu_overview.png');
 tbl = readtable(csv_path, 'TextType', 'string');
 metric_fields = {'qps', 'p99_ms', 'pci_transfer_count', 'gpu_util'};
 metric_labels = {'QPS', 'Latency (ms)', 'PCIe Transfer Count', 'GPU Utilization (%)'};
-metric_offsets = [120, 1.6, 0.16, 1.4];
-metric_limits = [0 7000; 0 75; 0 7.2; 0 95];
+metric_offsets = [90, 1.4, 0.14, 1.2];
+metric_limits = [0 5200; 0 75; 0 7.0; 0 75];
 scheme_colors = [
     1.00, 1.00, 1.00;
     0.82, 0.82, 0.82;

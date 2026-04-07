@@ -47,7 +47,7 @@ def main() -> None:
 
     display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
     ax.set_xticks(x, wrapped_labels(display))
-    ax.set_ylim(0, 32)
+    ax.set_ylim(0, 44)
     ax.set_xlabel("Merge scenarios", fontsize=13)
     ax.set_ylabel("Latency (ms)", fontsize=13)
     ax.set_axisbelow(True)
@@ -62,7 +62,7 @@ def main() -> None:
             height = rect.get_height()
             ax.text(
                 rect.get_x() + rect.get_width() / 2,
-                height + 0.55,
+                height + 0.65,
                 f"{height:.2f}",
                 ha="center",
                 va="bottom",

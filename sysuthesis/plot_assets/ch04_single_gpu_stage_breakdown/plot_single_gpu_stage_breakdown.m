@@ -28,7 +28,7 @@ for idx = 1:size(datasets, 1)
 
     fig = figure('Color', 'w', 'Position', [100, 100, 980, 520]);
     ax = axes(fig);
-    hb = bar(ax, values, 'stacked', 'BarWidth', 0.66);
+    hb = bar(ax, values, 'stacked', 'BarWidth', 0.64);
     hold(ax, 'on');
 
     for s = 1:numel(hb)
@@ -67,12 +67,12 @@ for idx = 1:size(datasets, 1)
 
     totals = tbl.latency_ms;
     for i = 1:numel(totals)
-        text(i, totals(i) + max(totals) * 0.03, sprintf('%.2f', totals(i)), ...
+        text(i, totals(i) + max(totals) * 0.025, sprintf('%.2f', totals(i)), ...
             'HorizontalAlignment', 'center', 'FontName', 'Times New Roman', ...
             'FontSize', 10.8, 'FontWeight', 'normal');
     end
 
-    ylim(ax, [0, max(totals) * 1.18]);
+    ylim(ax, [0, max(totals) * 1.16]);
     exportgraphics(fig, out_path, 'Resolution', 220);
     close(fig);
 end

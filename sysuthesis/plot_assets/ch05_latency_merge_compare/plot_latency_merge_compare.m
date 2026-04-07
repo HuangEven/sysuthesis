@@ -38,7 +38,7 @@ else
     display_labels = wrap_labels(tbl.scheme);
 end
 xticklabels(ax, display_labels);
-ylim(ax, [0, 32]);
+ylim(ax, [0, 44]);
 
 xlabel(ax, 'Merge scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
 ylabel(ax, 'Latency (ms)', 'FontName', 'Times New Roman', 'FontSize', 13);
@@ -48,7 +48,7 @@ for i = 1:numel(hb)
     x_points = hb(i).XEndPoints;
     y_points = hb(i).YEndPoints;
     for j = 1:numel(x_points)
-        text(x_points(j), y_points(j) + 0.55, sprintf('%.2f', plot_values(j, i)), ...
+        text(x_points(j), y_points(j) + 0.65, sprintf('%.2f', plot_values(j, i)), ...
             'HorizontalAlignment', 'center', ...
             'VerticalAlignment', 'bottom', ...
             'FontName', 'Times New Roman', ...

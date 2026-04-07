@@ -38,7 +38,7 @@ def main() -> None:
         for x, y in zip(subset["gpu_count"], subset["qps"]):
             ax.text(
                 x,
-                y + 350,
+                y + 180,
                 f"{y:.2f}",
                 ha="center",
                 va="bottom",
@@ -47,7 +47,7 @@ def main() -> None:
 
     ax.set_xlim(0.8, 4.2)
     ax.set_xticks([1, 2, 4])
-    ax.set_ylim(11000, 50000)
+    ax.set_ylim(0, 15000)
     ax.set_xlabel("Number of GPUs", fontsize=13)
     ax.set_ylabel("QPS", fontsize=13)
     ax.set_axisbelow(True)

@@ -16,7 +16,7 @@ end
 scale_labels = {'1M', '10M', '50M', '100M'};
 metrics = {'qps', 'p99_latency_ms', 'pr_auc'};
 ylabels = {'QPS', 'Latency (ms)', 'PR-AUC'};
-y_lims = [0 10500; 0 115; 0.918 0.9345];
+y_lims = [0 4700; 0 140; 0.885 0.935];
 markers = {'o', 's'};
 line_styles = {'-', '--'};
 
@@ -71,11 +71,11 @@ end
 function offset = metric_offset(metric)
 switch metric
     case 'qps'
-        offset = 220;
+        offset = 100;
     case 'p99_latency_ms'
-        offset = 2.4;
+        offset = 2.0;
     otherwise
-        offset = 0.00035;
+        offset = 0.00045;
 end
 end
 

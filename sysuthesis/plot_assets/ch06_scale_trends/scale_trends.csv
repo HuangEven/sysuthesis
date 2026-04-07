@@ -1,9 +1,9 @@
-scheme,scheme_desc,data_scale,qps,p99_latency_ms,pr_auc
-Full-scoring baseline,Full-scoring baseline,1M,1850.00,31.00,0.9320
-Full-scoring baseline,Full-scoring baseline,10M,920.00,45.00,0.9280
-Full-scoring baseline,Full-scoring baseline,50M,340.00,73.00,0.9250
-Full-scoring baseline,Full-scoring baseline,100M,180.00,108.00,0.9220
-Full fusion pipeline,Full fusion pipeline,1M,9680.00,12.80,0.9310
-Full fusion pipeline,Full fusion pipeline,10M,6420.00,19.40,0.9290
-Full fusion pipeline,Full fusion pipeline,50M,3180.00,33.70,0.9270
-Full fusion pipeline,Full fusion pipeline,100M,1820.00,49.80,0.9240
+scheme,scheme_desc,data_scale,qps,p99_latency_ms,pr_auc,topk_overlap
+Full-scoring baseline,Full-scoring baseline,1M,2700.00,32.50,0.9320,1.0000
+Full-scoring baseline,Full-scoring baseline,10M,1540.00,52.00,0.9295,1.0000
+Full-scoring baseline,Full-scoring baseline,50M,640.00,87.50,0.9250,1.0000
+Full-scoring baseline,Full-scoring baseline,100M,245.00,134.00,0.9205,1.0000
+Full fusion pipeline,Full fusion pipeline,1M,4280.00,25.80,0.9060,0.8980
+Full fusion pipeline,Full fusion pipeline,10M,2440.00,42.20,0.9025,0.8890
+Full fusion pipeline,Full fusion pipeline,50M,930.00,76.80,0.8975,0.8740
+Full fusion pipeline,Full fusion pipeline,100M,335.00,118.50,0.8910,0.8580
