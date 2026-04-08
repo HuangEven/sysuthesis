@@ -16,7 +16,7 @@ end
 scale_labels = {'1M', '10M', '50M', '100M'};
 metrics = {'qps', 'p99_latency_ms', 'pr_auc'};
 ylabels = {'QPS', 'Latency (ms)', 'PR-AUC'};
-y_lims = [0 4700; 0 140; 0.86 0.935];
+y_lims = [0 4700; 0 140; 0.76 0.915];
 markers = {'o', 's'};
 line_styles = {'-', '--'};
 

@@ -38,7 +38,7 @@ def main() -> None:
     metrics = [
         ("qps", "QPS", (0, 4700)),
         ("p99_latency_ms", "Latency (ms)", (0, 140)),
-        ("pr_auc", "PR-AUC", (0.86, 0.935)),
+        ("pr_auc", "PR-AUC", (0.76, 0.915)),
     ]
     line_styles = ["-", "--"]
     markers = ["o", "s"]

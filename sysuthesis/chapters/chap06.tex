@@ -348,7 +348,7 @@
 
 \subsection{不同数据规模下的系统表现对比}
 
-第四组结果回答“规模继续增大之后，系统还能否保持前述判断”。比较对象覆盖 1M、10M、50M、100M 四个规模层级，观察 QPS、p99 延迟和 PR-AUC 如何随规模变化。需要说明的是，PyTOD 全量评分可以作为 1M 量级下的效果上界参考，但并不适合作为 10M 以上规模的统一对照，因此这一组跨规模结果采用“初步融合方案”和“完整融合方案”作为可扩展口径下的比较对象。这里的重点不是证明系统在所有规模下都“同样优秀”，而是看在 out-of-core 路径和多 GPU 扩展逐渐进入关键位置后，前面得到的结论是否仍然成立：效果是否基本稳定，吞吐是否按预期下降，I/O 路径是否开始主导上限。
+第四组结果回答“规模继续增大之后，系统还能否保持前述判断”。比较对象覆盖 1M、10M、50M、100M 四个规模层级，观察 QPS、p99 延迟和 PR-AUC 如何随规模变化。需要说明的是，PyTOD 全量评分可以作为 1M 量级下的效果上界参考，但并不适合作为 10M 以上规模的统一对照，因此这一组跨规模结果采用“初步融合方案”和“完整融合方案”作为可扩展口径下的比较对象。这里更关注的是，在 out-of-core 路径和多 GPU 扩展逐渐进入关键位置后，系统性能与检测效果是否同时出现可解释的退化：吞吐是否按预期下降，p99 是否继续抬升，PR-AUC 和候选覆盖类指标是否在 10M 之后出现更明显回落，以及 I/O 路径是否开始主导上限。
 
 为便于综合展示，表~\ref{tab:core-summary} 汇总了核心结果，图~\ref{fig:fusion-vs-baselines}、图~\ref{fig:single-gpu-before-after}、图~\ref{fig:multi-gpu-scaling} 分别从检测效果、吞吐能力和效果--性能折中三个视角对融合系统与基线方案进行比较，图~\ref{fig:scale-comparison} 汇总单卡优化与多 GPU 扩展的收益差异，而图~\ref{fig:scale-trend} 则展示跨规模趋势。
 
@@ -368,7 +368,7 @@
     单卡链路优化收益 & 单卡优化 & QPS, p99 Latency, CPU Utilization & GPU 主导执行链路显著压缩阶段边界开销，p99 延迟和 CPU 负载同步下降，端到端吞吐明显提升 & 图~\ref{fig:single-stage-breakdown}--图~\ref{fig:single-gpu-overview}，图~\ref{fig:scale-comparison} \\
     多 GPU replicated 扩展性 & 2/4 GPU replicated & QPS, CPU Utilization & GPU 数量增加时系统吞吐近似线性增长，CPU 利用率未同步放大，说明控制面/数据平面分离设计有效 & 图~\ref{fig:qps-vs-gpu}，图~\ref{fig:scale-comparison} \\
     跨卡归并策略差异 & GPU merge vs.\ CPU aggregation & avg/p99 Latency & 当索引无法完整复制时，GPU 侧归并优于 CPU 聚合，说明``CPU 退出数据平面''在多 GPU 场景中仍然重要 & 图~\ref{fig:latency-quantiles}，表~\ref{tab:primary-vs-fallback} \\
-    跨规模可行性 & 完整融合 & QPS, p99 Latency, PR-AUC & 从 1M 扩展到 100M 时，QPS 随规模增大而下降、p99 上升，但 PR-AUC 保持相对稳定，且完整融合在可扩展口径下持续优于初步融合基线 & 图~\ref{fig:scale-trend} \\
+    跨规模可行性 & 完整融合 & QPS, p99 Latency, PR-AUC & 从 1M 扩展到 100M 时，QPS 随规模增大而下降、p99 上升，PR-AUC 与候选覆盖类指标在 10M 之后出现更明显回落，但完整融合在可扩展口径下仍持续优于初步融合基线 & 图~\ref{fig:scale-trend} \\
     \bottomrule
   \end{tabular}
   \end{adjustbox}
@@ -437,7 +437,7 @@
     多 GPU 主方案应优先采用 replicated 架构 & 表~\ref{tab:primary-vs-fallback}，图~\ref{fig:qps-vs-gpu}，图~\ref{fig:scale-comparison} & 在显存允许的前提下，replicated 方案扩展路径更简单、CPU 压力更低，吞吐随 GPU 数量增加保持稳定增长 & 5.3，5.8，6.4.2 \\
     必须跨卡归并时 GPU 侧归并优于 CPU 聚合 & 图~\ref{fig:latency-quantiles}，表~\ref{tab:primary-vs-fallback} & GPU merge 的平均延迟与 p99 延迟均低于 CPU aggregation，说明大规模中间结果不宜回流主机侧处理 & 5.5，5.8 \\
     I/O 路径组织决定多 GPU 扩展上限 & 图~\ref{fig:topology}，图~\ref{fig:io-lane-impact}，图~\ref{fig:scale-trend} & 当多卡共享 PCIe/SSD 路径时，p99 延迟上升且 QPS 恶化，合理 lane 绑定是释放多 GPU 吞吐的必要条件 & 5.6，5.8，6.4.3 \\
-    out-of-core 融合方案在超大规模下仍具工程可行性 & 图~\ref{fig:scale-trend}，表~\ref{tab:core-summary} & 即便扩展到 100M 规模，完整融合方案的 PR-AUC 仍保持在可接受区间，并在吞吐和尾延迟上继续优于可扩展弱基线，说明外存候选召回结合 GPU 评分具有可行性 & 6.4.3 \\
+    out-of-core 融合方案在超大规模下仍具工程可行性 & 图~\ref{fig:scale-trend}，表~\ref{tab:core-summary} & 即便扩展到 100M 规模，完整融合方案的 PR-AUC 已下降到约 0.8 附近，但仍在吞吐和尾延迟上继续优于可扩展弱基线，说明外存候选召回结合 GPU 评分仍具有工程可行性 & 6.4.3 \\
     \bottomrule
   \end{tabular}
   \end{adjustbox}
