@@ -737,12 +737,44 @@
 
 % Times New Roman + Arial
 \newcommand\sysu@set@font@times{%
-  \setmainfont{Times New Roman}%
-  \setsansfont{Arial}%
+  % Overleaf/Linux 通常没有 Times New Roman/Arial；这里做一个“有则用之、无则回退”的设置。
+  \IfFontExistsTF{Times New Roman}{%
+    \setmainfont{Times New Roman}%
+  }{%
+    \setmainfont{texgyretermes}[%
+      Extension      = .otf,%
+      UprightFont    = *-regular,%
+      BoldFont       = *-bold,%
+      ItalicFont     = *-italic,%
+      BoldItalicFont = *-bolditalic,%
+    ]%
+  }%
+  \IfFontExistsTF{Arial}{%
+    \setsansfont{Arial}%
+  }{%
+    \setsansfont{texgyreheros}[%
+      Extension      = .otf,%
+      UprightFont    = *-regular,%
+      BoldFont       = *-bold,%
+      ItalicFont     = *-italic,%
+      BoldItalicFont = *-bolditalic,%
+    ]%
+  }%
   \ifsysu@system@mac
     \setmonofont{Menlo}[Scale = MatchLowercase]%
   \else
-    \setmonofont{Courier New}[Scale = MatchLowercase]%
+    \IfFontExistsTF{Courier New}{%
+      \setmonofont{Courier New}[Scale = MatchLowercase]%
+    }{%
+      \setmonofont{texgyrecursor}[%
+        Extension      = .otf,%
+        UprightFont    = *-regular,%
+        BoldFont       = *-bold,%
+        ItalicFont     = *-italic,%
+        BoldItalicFont = *-bolditalic,%
+        Scale          = MatchLowercase,%
+      ]%
+    }%
   \fi
 }
 
