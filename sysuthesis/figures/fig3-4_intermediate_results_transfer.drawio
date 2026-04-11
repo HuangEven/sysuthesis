@@ -5,52 +5,52 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="gpu_bg" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b3b3b3;dashed=1;arcSize=12;" parent="1" vertex="1">
-          <mxGeometry x="70" y="90" width="1220" height="340" as="geometry" />
+          <mxGeometry x="60" y="85" width="1120" height="350" as="geometry" />
         </mxCell>
         <mxCell id="cpu_bg" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;dashed=1;arcSize=12;" parent="1" vertex="1">
-          <mxGeometry x="1340" y="140" width="220" height="210" as="geometry" />
+          <mxGeometry x="1215" y="145" width="250" height="220" as="geometry" />
         </mxCell>
-        <mxCell id="gpu_lbl" value="GPU 侧连续传递主路径" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;fontColor=#666666;" parent="1" vertex="1">
-          <mxGeometry x="95" y="100" width="220" height="20" as="geometry" />
+        <mxCell id="gpu_lbl" value="GPU 侧连续传递主路径" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=18;fontColor=#666666;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="85" y="98" width="260" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="cpu_lbl" value="CPU / 主机侧" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;fontColor=#8a6d3b;" parent="1" vertex="1">
-          <mxGeometry x="1390" y="150" width="120" height="20" as="geometry" />
+        <mxCell id="cpu_lbl" value="CPU / 主机侧" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=18;fontColor=#8a6d3b;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="1260" y="158" width="160" height="24" as="geometry" />
         </mxCell>
-        <mxCell id="q" value="统一查询向量&lt;br/&gt;&lt;b&gt;v_i ∈ R^d&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="80" y="210" width="190" height="90" as="geometry" />
+        <mxCell id="q" value="统一查询向量&lt;br/&gt;&lt;b&gt;v_i ∈ R^d&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=17;fontStyle=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="80" y="205" width="180" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="recall" value="候选召回模块&lt;br/&gt;&lt;b&gt;FlashANNS / FAISS-GPU&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="310" y="200" width="210" height="110" as="geometry" />
+        <mxCell id="recall" value="候选召回模块&lt;br/&gt;&lt;b&gt;FlashANNS / FAISS-GPU&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=17;fontStyle=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="290" y="195" width="215" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="cand" value="候选结果缓冲&lt;br/&gt;&lt;b&gt;ID / distance / local rank / reference&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" parent="1" vertex="1">
-          <mxGeometry x="570" y="210" width="240" height="90" as="geometry" />
+        <mxCell id="cand" value="候选结果缓冲&lt;br/&gt;&lt;b&gt;ID / distance / local rank / reference&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="535" y="205" width="240" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="reorg" value="候选组织与重排" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="860" y="205" width="180" height="100" as="geometry" />
+        <mxCell id="reorg" value="候选组织与重排" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=17;fontStyle=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="805" y="202" width="180" height="106" as="geometry" />
         </mxCell>
-        <mxCell id="score" value="PyTOD 评分主干" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="1090" y="205" width="180" height="100" as="geometry" />
+        <mxCell id="score" value="PyTOD 评分主干" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#f8cecc;strokeColor=#b85450;fontSize=17;fontStyle=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="1015" y="202" width="180" height="106" as="geometry" />
         </mxCell>
-        <mxCell id="out" value="最终小规模结果&lt;br/&gt;&lt;b&gt;score / rank / logs&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="1370" y="215" width="160" height="80" as="geometry" />
+        <mxCell id="out" value="最终小规模结果&lt;br/&gt;&lt;b&gt;score / rank / logs&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=17;fontStyle=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="1245" y="215" width="190" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="ann_q" value="输入：查询向量" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#333333;" parent="1" vertex="1">
-          <mxGeometry x="310" y="330" width="200" height="20" as="geometry" />
+        <mxCell id="ann_q" value="输入：查询向量" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=15;fontColor=#333333;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="295" y="330" width="205" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="ann_c" value="输出：候选集合 C_i" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#333333;" parent="1" vertex="1">
-          <mxGeometry x="610" y="310" width="180" height="20" as="geometry" />
+        <mxCell id="ann_c" value="输出：候选集合 C_i" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=15;fontColor=#333333;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="565" y="315" width="180" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="ann_r" value="形成可直接进入评分的设备侧张量" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#333333;" parent="1" vertex="1">
-          <mxGeometry x="840" y="320" width="230" height="20" as="geometry" />
+        <mxCell id="ann_r" value="形成可直接进入评分的设备侧张量" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=15;fontColor=#333333;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="775" y="323" width="250" height="22" as="geometry" />
         </mxCell>
-        <mxCell id="ann_s" value="评分中间张量：&lt;div&gt;distance matrix / local sorting / aggregation stats&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#333333;" parent="1" vertex="1">
-          <mxGeometry x="1030" y="165" width="300" height="20" as="geometry" />
+        <mxCell id="ann_s" value="评分中间张量：&lt;div&gt;distance matrix / local sorting / aggregation stats&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontColor=#333333;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="940" y="150" width="300" height="36" as="geometry" />
         </mxCell>
-        <mxCell id="gpu_note" value="查询向量、候选结果与评分中间张量尽量保留在 GPU 侧连续流转" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontColor=#666666;fontStyle=2;" parent="1" vertex="1">
-          <mxGeometry x="350" y="380" width="650" height="24" as="geometry" />
+        <mxCell id="gpu_note" value="查询向量、候选结果与评分中间张量尽量保留在 GPU 侧连续流转" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=16;fontColor=#666666;fontStyle=2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="295" y="382" width="650" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="cpu_note" value="仅最终结果与日志回传主机" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#8a6d3b;fontStyle=2;" parent="1" vertex="1">
-          <mxGeometry x="1358" y="307" width="190" height="24" as="geometry" />
+        <mxCell id="cpu_note" value="仅最终结果与日志回传主机" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=15;fontColor=#8a6d3b;fontStyle=2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="1230" y="318" width="220" height="26" as="geometry" />
         </mxCell>
         <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;strokeColor=#666666;" parent="1" source="q" target="recall" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -66,35 +66,35 @@
         </mxCell>
         <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;endArrow=block;endFill=1;strokeColor=#666666;" parent="1" target="out" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1270" y="255" as="sourcePoint" />
+            <mxPoint x="1195" y="255" as="sourcePoint" />
             <Array as="points" />
           </mxGeometry>
         </mxCell>
         <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;dashed=1;endArrow=none;strokeColor=#999999;" parent="1" source="q" target="score" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="215" y="140" />
-              <mxPoint x="1180" y="140" />
+              <mxPoint x="170" y="140" />
+              <mxPoint x="1105" y="140" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="l1" value="模块间传递对象" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="110" y="490" width="160" height="36" as="geometry" />
+        <mxCell id="l1" value="模块间传递对象" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="90" y="485" width="170" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="l2" value="① 查询向量 v_i" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" parent="1" vertex="1">
-          <mxGeometry x="290" y="490" width="160" height="36" as="geometry" />
+        <mxCell id="l2" value="① 查询向量 v_i" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="275" y="485" width="155" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="l3" value="② 候选结果 C_i 及其字段" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" parent="1" vertex="1">
-          <mxGeometry x="470" y="490" width="190" height="36" as="geometry" />
+        <mxCell id="l3" value="② 候选结果 C_i 及其字段" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="445" y="485" width="200" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="l4" value="③ 候选张量 / index mapping" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" parent="1" vertex="1">
-          <mxGeometry x="680" y="490" width="200" height="36" as="geometry" />
+        <mxCell id="l4" value="③ 候选张量 / index mapping" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="660" y="485" width="220" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="l5" value="④ 评分中间张量" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" parent="1" vertex="1">
-          <mxGeometry x="900" y="490" width="160" height="36" as="geometry" />
+        <mxCell id="l5" value="④ 评分中间张量" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="895" y="485" width="170" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="l6" value="⑤ 最终结果与日志" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" parent="1" vertex="1">
-          <mxGeometry x="1080" y="490" width="170" height="36" as="geometry" />
+        <mxCell id="l6" value="⑤ 最终结果与日志" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="1080" y="485" width="180" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
