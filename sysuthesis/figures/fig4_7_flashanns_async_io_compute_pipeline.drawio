@@ -1,47 +1,47 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.1.2 Chrome/138.0.7204.243 Electron/37.4.0 Safari/537.36" version="28.1.2">
+<mxfile host="app.diagrams.net" modified="2026-04-12T10:45:00.000Z" agent="Codex" version="28.1.2">
   <diagram id="flashanns-async-io-compute" name="Page-1">
-    <mxGraphModel dx="1783" dy="1074" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+    <mxGraphModel dx="1320" dy="680" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="680" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="ssdFrame" value="SSD" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;fillColor=#F8CECC;strokeColor=#B85450;strokeWidth=1.4;" parent="1" vertex="1">
-          <mxGeometry x="70" y="290" width="150" height="110" as="geometry" />
+        <mxCell id="ssdFrame" value="SSD" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=18;fillColor=#F8CECC;strokeColor=#B85450;strokeWidth=1.4;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="45" y="255" width="145" height="105" as="geometry" />
         </mxCell>
-        <mxCell id="gpuFrame" value="GPU" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=16;spacingTop=12;fontStyle=1;fontSize=16;fillColor=#EAF3FF;strokeColor=#6C8EBF;strokeWidth=1.5;" parent="1" vertex="1">
-          <mxGeometry x="270" y="120" width="1110" height="470" as="geometry" />
+        <mxCell id="gpuFrame" value="GPU" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=16;spacingTop=12;fontStyle=1;fontSize=18;fillColor=#EAF3FF;strokeColor=#6C8EBF;strokeWidth=1.5;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="220" y="75" width="1010" height="405" as="geometry" />
         </mxCell>
-        <mxCell id="ioLane" value="I/O lane" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;fontStyle=1;fontSize=14;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=1;" parent="1" vertex="1">
-          <mxGeometry x="305" y="175" width="1040" height="145" as="geometry" />
+        <mxCell id="ioLane" value="I/O 泳道" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;fontStyle=1;fontSize=16;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="255" y="120" width="940" height="125" as="geometry" />
         </mxCell>
-        <mxCell id="computeLane" value="Compute lane" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;fontStyle=1;fontSize=14;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=1;" parent="1" vertex="1">
-          <mxGeometry x="305" y="350" width="1040" height="205" as="geometry" />
+        <mxCell id="computeLane" value="计算泳道" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;fontStyle=1;fontSize=16;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="255" y="275" width="940" height="165" as="geometry" />
         </mxCell>
-        <mxCell id="ssdRead" value="SSD读页" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=15;fillColor=#FDE9E7;strokeColor=#B85450;strokeWidth=1.2;" parent="1" vertex="1">
-          <mxGeometry x="95" y="322" width="100" height="48" as="geometry" />
+        <mxCell id="ssdRead" value="SSD读页" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=17;fillColor=#FDE9E7;strokeColor=#B85450;strokeWidth=1.2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="68" y="288" width="100" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="asyncQueue" value="异步I/O队列" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=15;fillColor=#FFFFFF;strokeColor=#6C8EBF;strokeWidth=1.2;" parent="1" vertex="1">
-          <mxGeometry x="385" y="220" width="170" height="60" as="geometry" />
+        <mxCell id="asyncQueue" value="异步I/O队列" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=17;fillColor=#FFFFFF;strokeColor=#6C8EBF;strokeWidth=1.2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="340" y="158" width="170" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="gpuRecv" value="GPU接收" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=15;fillColor=#FFFFFF;strokeColor=#6C8EBF;strokeWidth=1.2;" parent="1" vertex="1">
-          <mxGeometry x="630" y="220" width="140" height="60" as="geometry" />
+        <mxCell id="gpuRecv" value="GPU接收" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=17;fillColor=#FFFFFF;strokeColor=#6C8EBF;strokeWidth=1.2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="585" y="158" width="145" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="distanceExpand" value="GPU距离计算&lt;br&gt;与扩展" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=15;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=1.2;" parent="1" vertex="1">
-          <mxGeometry x="560" y="420" width="200" height="68" as="geometry" />
+        <mxCell id="distanceExpand" value="GPU距离计算&lt;br&gt;与扩展" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=17;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=1.2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="520" y="330" width="195" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="candidateCache" value="GPU候选缓存&lt;br&gt;(ID / distance / rank)" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=15;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=1.2;" parent="1" vertex="1">
-          <mxGeometry x="850" y="410" width="240" height="88" as="geometry" />
+        <mxCell id="candidateCache" value="GPU候选缓存&lt;br&gt;(ID / distance / rank)" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=17;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=1.2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="795" y="325" width="240" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="pytodScore" value="PyTOD评分" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=15;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=1.2;" parent="1" vertex="1">
-          <mxGeometry x="1170" y="420" width="150" height="68" as="geometry" />
+        <mxCell id="pytodScore" value="PyTOD评分" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=17;fillColor=#FFFFFF;strokeColor=#82B366;strokeWidth=1.2;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="1090" y="330" width="135" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="overlapBand" value="I/O 与 GPU 计算重叠推进" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=15;fontColor=#2E7D32;fillColor=#E1F5E1;strokeColor=#82B366;strokeWidth=1.2;opacity=85;" parent="1" vertex="1">
-          <mxGeometry x="620" y="305" width="430" height="42" as="geometry" />
+        <mxCell id="overlapBand" value="I/O 与 GPU 计算重叠推进" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;fontColor=#2E7D32;fillColor=#E1F5E1;strokeColor=#82B366;strokeWidth=1.2;opacity=85;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="740" y="248" width="300" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="handoffNote" value="候选不回CPU&lt;br&gt;连续传递到评分模块" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=14;fontColor=#2E7D32;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=1.1;" parent="1" vertex="1">
-          <mxGeometry x="910" y="220" width="220" height="58" as="geometry" />
+        <mxCell id="handoffNote" value="候选不回CPU&lt;br&gt;连续传递到评分模块" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=16;fontColor=#2E7D32;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=1.1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="820" y="158" width="230" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="stageNote" value="页到达后即可触发局部距离计算和候选扩展" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=13;fontColor=#355C7D;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=1;" parent="1" vertex="1">
-          <mxGeometry x="585" y="520" width="260" height="42" as="geometry" />
+        <mxCell id="stageNote" value="页到达后即可触发局部距离计算和候选扩展" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#355C7D;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=1;fontFamily=PingFang SC;" parent="1" vertex="1">
+          <mxGeometry x="500" y="410" width="300" height="38" as="geometry" />
         </mxCell>
         <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B85450;strokeWidth=2.8;endArrow=block;endFill=1;" parent="1" source="ssdRead" target="asyncQueue" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -52,7 +52,7 @@
         <mxCell id="e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6C8EBF;strokeWidth=2.8;endArrow=block;endFill=1;" parent="1" source="gpuRecv" target="distanceExpand" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="700" y="312" />
+              <mxPoint x="658" y="282" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -62,14 +62,14 @@
         <mxCell id="e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D32;strokeWidth=3.2;endArrow=block;endFill=1;" parent="1" source="candidateCache" target="pytodScore" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ssdToQueueLabel" value="页块异步提交" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#B85450;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="240" y="302" width="110" height="26" as="geometry" />
+        <mxCell id="ssdToQueueLabel" value="页块异步提交" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontColor=#B85450;fontStyle=1;fontFamily=PingFang SC;labelBackgroundColor=#FFFFFF;" parent="1" vertex="1">
+          <mxGeometry x="205" y="258" width="120" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="queueLabel" value="提交后无需等待全部 I/O 完成" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#355C7D;" parent="1" vertex="1">
-          <mxGeometry x="455" y="285" width="260" height="26" as="geometry" />
+        <mxCell id="queueLabel" value="提交后无需等待全部 I/O 完成" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontColor=#355C7D;fontFamily=PingFang SC;labelBackgroundColor=#FFFFFF;" parent="1" vertex="1">
+          <mxGeometry x="405" y="224" width="270" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="handoffLabel" value="device-resident handoff" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#2E7D32;fontStyle=1;" parent="1" vertex="1">
-          <mxGeometry x="1015" y="505" width="180" height="24" as="geometry" />
+        <mxCell id="handoffLabel" value="设备侧连续交接" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontColor=#2E7D32;fontStyle=1;fontFamily=PingFang SC;labelBackgroundColor=#FFFFFF;" parent="1" vertex="1">
+          <mxGeometry x="915" y="408" width="170" height="24" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
