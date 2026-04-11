@@ -2,12 +2,13 @@ function plot_single_gpu_overview()
 % 绘制图4-16：单卡性能综合对比图
 
 root_dir = fileparts(mfilename('fullpath'));
+font_name = 'Songti SC';
 csv_path = fullfile(root_dir, 'single_gpu_overview_metrics.csv');
 out_path = fullfile(root_dir, 'fig4_16_single_gpu_overview.png');
 
 tbl = readtable(csv_path, 'TextType', 'string');
 metric_fields = {'qps', 'p99_ms', 'pci_transfer_count', 'gpu_util'};
-metric_labels = {'QPS', 'Latency (ms)', 'PCIe Transfer Count', 'GPU Utilization (%)'};
+metric_labels = {'吞吐率（QPS）', '延迟（毫秒）', 'PCIe传输次数', 'GPU利用率（%）'};
 metric_offsets = [90, 1.4, 0.14, 1.2];
 metric_limits = [0 5200; 0 75; 0 7.0; 0 75];
 scheme_colors = [
@@ -32,7 +33,7 @@ for i = 1:numel(metric_fields)
     bars = bar(ax, values, 'BarWidth', 0.68, 'FaceColor', 'flat', 'EdgeColor', 'k', 'LineWidth', 0.9);
     bars.CData = scheme_colors;
 
-    ax.FontName = 'Times New Roman';
+    ax.FontName = font_name;
     ax.FontSize = 12;
     ax.Box = 'off';
     ax.LineWidth = 1.0;
@@ -45,15 +46,15 @@ for i = 1:numel(metric_fields)
     xticks(ax, 1:height(tbl));
     xticklabels(ax, display_labels);
     xtickangle(ax, 0);
-    xlabel(ax, 'Execution scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
-    ylabel(ax, metric_labels{i}, 'FontName', 'Times New Roman', 'FontSize', 13);
+    xlabel(ax, '执行方案', 'FontName', font_name, 'FontSize', 13);
+    ylabel(ax, metric_labels{i}, 'FontName', font_name, 'FontSize', 13);
     ylim(ax, metric_limits(i, :));
 
     for j = 1:numel(values)
         text(ax, j, values(j) + metric_offsets(i), sprintf('%.2f', values(j)), ...
             'HorizontalAlignment', 'center', ...
             'VerticalAlignment', 'bottom', ...
-            'FontName', 'Times New Roman', ...
+            'FontName', font_name, ...
             'FontSize', 10.0);
     end
 end
@@ -65,12 +66,18 @@ end
 function labels = wrap_labels(values)
 labels = cell(size(values));
 for i = 1:numel(values)
-    words = split(string(values(i)));
-    if numel(words) <= 2
-        labels{i} = char(join(words, newline));
-    else
-        mid = ceil(numel(words) / 2);
-        labels{i} = char(join(words(1:mid), " ") + newline + join(words(mid+1:end), " "));
+    label = string(values(i));
+    switch label
+        case {"Original pipeline baseline", "Original baseline"}
+            labels{i} = "原始链路" + newline + "基线";
+        case {"Recall acceleration only", "Recall-accelerated"}
+            labels{i} = "仅召回" + newline + "加速";
+        case {"GPU-resident recall-to-score handoff", "GPU handoff"}
+            labels{i} = "GPU侧常驻" + newline + "交接";
+        case {"Full single-GPU optimization", "Full optimization"}
+            labels{i} = "完整单卡" + newline + "优化";
+        otherwise
+            labels{i} = char(label);
     end
 end
 end

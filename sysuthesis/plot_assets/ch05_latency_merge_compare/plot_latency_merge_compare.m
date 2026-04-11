@@ -2,6 +2,7 @@ function plot_latency_merge_compare()
 % 绘制图5-16：延迟与归并方式对比图
 
 root_dir = fileparts(mfilename('fullpath'));
+font_name = 'Songti SC';
 csv_path = fullfile(root_dir, 'latency_merge_compare.csv');
 out_path = fullfile(root_dir, 'fig5_16_latency_merge_compare.png');
 
@@ -21,7 +22,7 @@ hb(2).FaceColor = [0.82, 0.82, 0.82];
 hb(2).EdgeColor = [0, 0, 0];
 hb(2).LineWidth = 1.2;
 
-ax.FontName = 'Times New Roman';
+ax.FontName = font_name;
 ax.FontSize = 12;
 ax.LineWidth = 1.0;
 ax.Box = 'off';
@@ -40,9 +41,9 @@ end
 xticklabels(ax, display_labels);
 ylim(ax, [0, 44]);
 
-xlabel(ax, 'Merge scenarios', 'FontName', 'Times New Roman', 'FontSize', 13);
-ylabel(ax, 'Latency (ms)', 'FontName', 'Times New Roman', 'FontSize', 13);
-legend(ax, {'Average', 'p99'}, 'Location', 'northwest', 'Box', 'off', 'FontName', 'Times New Roman');
+xlabel(ax, '归并方案', 'FontName', font_name, 'FontSize', 13);
+ylabel(ax, '延迟（毫秒）', 'FontName', font_name, 'FontSize', 13);
+legend(ax, {'平均延迟', 'p99延迟'}, 'Location', 'northoutside', 'Orientation', 'horizontal', 'Box', 'off', 'FontName', font_name);
 
 for i = 1:numel(hb)
     x_points = hb(i).XEndPoints;
@@ -51,7 +52,7 @@ for i = 1:numel(hb)
         text(x_points(j), y_points(j) + 0.65, sprintf('%.2f', plot_values(j, i)), ...
             'HorizontalAlignment', 'center', ...
             'VerticalAlignment', 'bottom', ...
-            'FontName', 'Times New Roman', ...
+            'FontName', font_name, ...
             'FontSize', 10);
     end
 end
@@ -63,12 +64,16 @@ end
 function labels = wrap_labels(values)
 labels = cell(size(values));
 for i = 1:numel(values)
-    words = split(string(values(i)));
-    if numel(words) <= 2
-        labels{i} = char(join(words, newline));
-    else
-        mid = ceil(numel(words) / 2);
-        labels{i} = char(join(words(1:mid), " ") + newline + join(words(mid+1:end), " "));
+    label = string(values(i));
+    switch label
+        case {"Replicated primary path", "Replicated path"}
+            labels{i} = "索引复制 /" + newline + "数据并行";
+        case {"CPU-side aggregation fallback", "CPU aggregation"}
+            labels{i} = "局部评分 +" + newline + "CPU侧聚合";
+        case {"GPU-side merge fallback", "GPU merge"}
+            labels{i} = "局部评分 +" + newline + "GPU侧归并";
+        otherwise
+            labels{i} = char(label);
     end
 end
 end

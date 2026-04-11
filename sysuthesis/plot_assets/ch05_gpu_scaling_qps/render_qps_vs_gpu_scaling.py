@@ -2,17 +2,40 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import font_manager
 
 
 ROOT = Path(__file__).resolve().parent
 CSV_PATH = ROOT / "gpu_scaling_qps.csv"
 OUT_PATH = ROOT / "fig5_15_qps_vs_gpu.png"
 
-plt.rcParams["font.family"] = "Times New Roman"
-plt.rcParams["axes.unicode_minus"] = False
+SCHEME_LABELS = {
+    "Replicated path": "索引复制 / 数据并行",
+    "Replicated primary path": "索引复制 / 数据并行",
+}
+
+
+def setup_cjk_font() -> None:
+    candidates = [
+        "Noto Sans CJK SC",
+        "SimHei",
+        "Microsoft YaHei",
+        "SimSun",
+        "Songti SC",
+        "PingFang SC",
+    ]
+    available = {font.name for font in font_manager.fontManager.ttflist}
+    for name in candidates:
+        if name in available:
+            plt.rcParams["font.family"] = name
+            break
+    else:
+        plt.rcParams["font.family"] = "DejaVu Sans"
+    plt.rcParams["axes.unicode_minus"] = False
 
 
 def main() -> None:
+    setup_cjk_font()
     df = pd.read_csv(CSV_PATH)
     label_column = "scheme_desc" if "scheme_desc" in df.columns else "scheme"
     schemes = list(dict.fromkeys(df[label_column].tolist()))
@@ -32,7 +55,7 @@ def main() -> None:
             marker=markers[min(idx, len(markers) - 1)],
             markersize=6.8,
             markerfacecolor="white",
-            label=str(scheme),
+            label=SCHEME_LABELS.get(str(scheme), str(scheme)),
         )
 
         for x, y in zip(subset["gpu_count"], subset["qps"]):
@@ -48,8 +71,8 @@ def main() -> None:
     ax.set_xlim(0.8, 4.2)
     ax.set_xticks([1, 2, 4])
     ax.set_ylim(0, 15000)
-    ax.set_xlabel("Number of GPUs", fontsize=13)
-    ax.set_ylabel("QPS", fontsize=13)
+    ax.set_xlabel("GPU数量", fontsize=13)
+    ax.set_ylabel("吞吐率（QPS）", fontsize=13)
     ax.set_axisbelow(True)
     ax.grid(True, which="major", axis="both", linestyle="--", linewidth=0.7, color="#B8B8B8", alpha=0.45)
     ax.spines["top"].set_visible(False)

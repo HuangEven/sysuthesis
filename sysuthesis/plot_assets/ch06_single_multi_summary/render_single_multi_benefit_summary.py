@@ -3,26 +3,49 @@ from textwrap import fill
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import font_manager
 
 
 ROOT = Path(__file__).resolve().parent
 CSV_PATH = ROOT / "single_multi_benefit_summary.csv"
 OUT_PATH = ROOT / "fig6_7_single_multi_summary.png"
 
-plt.rcParams["font.family"] = "Times New Roman"
-plt.rcParams["axes.unicode_minus"] = False
+SCENARIO_LABELS = {
+    "Original baseline": "原始链路\n基线",
+    "Original pipeline baseline": "原始链路\n基线",
+    "Single-GPU optimized": "完整单卡\n优化",
+    "Single-GPU full optimization": "完整单卡\n优化",
+    "2-GPU replicated": "2 GPU\n索引复制",
+    "2-GPU replicated scaling": "2 GPU\n索引复制",
+    "4-GPU replicated": "4 GPU\n索引复制",
+    "4-GPU replicated scaling": "4 GPU\n索引复制",
+}
+
+
+def setup_cjk_font() -> None:
+    candidates = [
+        "Noto Sans CJK SC",
+        "SimHei",
+        "Microsoft YaHei",
+        "SimSun",
+        "Songti SC",
+        "PingFang SC",
+    ]
+    available = {font.name for font in font_manager.fontManager.ttflist}
+    for name in candidates:
+        if name in available:
+            plt.rcParams["font.family"] = name
+            break
+    else:
+        plt.rcParams["font.family"] = "DejaVu Sans"
+    plt.rcParams["axes.unicode_minus"] = False
 
 
 def scenario_labels(df: pd.DataFrame) -> list[str]:
     labels = []
-    for value in df["scheme"].tolist():
-        mapping = {
-            "Original baseline": "Original\npipeline",
-            "Single-GPU optimized": "Single-GPU\noptimized",
-            "2-GPU replicated": "2-GPU\nreplicated",
-            "4-GPU replicated": "4-GPU\nreplicated",
-        }
-        labels.append(mapping.get(str(value), fill(str(value), width=14, break_long_words=False)))
+    source = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
+    for value in source.tolist():
+        labels.append(SCENARIO_LABELS.get(str(value), fill(str(value), width=10, break_long_words=False)))
     return labels
 
 
@@ -35,24 +58,25 @@ def style_axes(ax: plt.Axes) -> None:
 
 
 def main() -> None:
+    setup_cjk_font()
     df = pd.read_csv(CSV_PATH)
     labels = scenario_labels(df)
     metrics = [
-        ("qps", "QPS", (0, 15000), 220, "white"),
-        ("p99_latency_ms", "Latency (ms)", (0, 75), 1.0, "#D1D1D1"),
-        ("cpu_util", "CPU Utilization (%)", (0, 70), 0.9, "#A6A6A6"),
+        ("qps", "吞吐率（QPS）", (0, 15000), 220, "white"),
+        ("p99_latency_ms", "p99延迟（毫秒）", (0, 75), 1.0, "#D1D1D1"),
+        ("cpu_util", "CPU利用率（%）", (0, 70), 0.9, "#A6A6A6"),
     ]
 
-    fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.6), dpi=220)
+    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.8), dpi=220)
 
     for ax, (column, ylabel, ylim, offset, color) in zip(axes, metrics):
         bars = ax.bar(range(len(df)), df[column], color=color, edgecolor="black", linewidth=1.2)
         ax.set_xticks(range(len(df)), labels)
-        ax.set_xlabel("Validation scenarios", fontsize=12.5)
+        ax.set_xlabel("验证场景", fontsize=12.5)
         ax.set_ylabel(ylabel, fontsize=13)
         ax.set_ylim(*ylim)
         style_axes(ax)
-        ax.tick_params(axis="x", labelsize=11.2)
+        ax.tick_params(axis="x", labelsize=11.0)
         for rect, value in zip(bars, df[column]):
             ax.text(rect.get_x() + rect.get_width() / 2, value + offset, f"{value:.2f}", ha="center", va="bottom", fontsize=9.4)
 

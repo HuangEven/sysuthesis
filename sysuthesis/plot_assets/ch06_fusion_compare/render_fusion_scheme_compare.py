@@ -3,17 +3,63 @@ from textwrap import fill
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import font_manager
 
 
 ROOT = Path(__file__).resolve().parent
 CSV_PATH = ROOT / "fusion_scheme_compare.csv"
 
-plt.rcParams["font.family"] = "Times New Roman"
-plt.rcParams["axes.unicode_minus"] = False
+SCENARIO_LABELS = {
+    "Full scoring": "PyTOD全量\n评分基线",
+    "Full-scoring baseline": "PyTOD全量\n评分基线",
+    "Recall-only": "仅召回\n筛选",
+    "Recall-only screening": "仅召回\n筛选",
+    "Initial fusion": "初步融合\n方案",
+    "Initial fusion pipeline": "初步融合\n方案",
+    "Full fusion": "完整融合\n方案",
+    "Full fusion pipeline": "完整融合\n方案",
+}
+
+LEGEND_LABELS = {
+    "Full scoring": "PyTOD全量评分基线",
+    "Full-scoring baseline": "PyTOD全量评分基线",
+    "Recall-only": "仅召回筛选",
+    "Recall-only screening": "仅召回筛选",
+    "Initial fusion": "初步融合方案",
+    "Initial fusion pipeline": "初步融合方案",
+    "Full fusion": "完整融合方案",
+    "Full fusion pipeline": "完整融合方案",
+}
+
+
+def setup_cjk_font() -> None:
+    candidates = [
+        "Noto Sans CJK SC",
+        "SimHei",
+        "Microsoft YaHei",
+        "SimSun",
+        "Songti SC",
+        "PingFang SC",
+    ]
+    available = {font.name for font in font_manager.fontManager.ttflist}
+    for name in candidates:
+        if name in available:
+            plt.rcParams["font.family"] = name
+            break
+    else:
+        plt.rcParams["font.family"] = "DejaVu Sans"
+    plt.rcParams["axes.unicode_minus"] = False
 
 
 def wrapped_labels(values: pd.Series, width: int = 16) -> list[str]:
-    return [fill(str(item), width=width, break_long_words=False) for item in values]
+    labels = []
+    for item in values:
+        text = SCENARIO_LABELS.get(str(item), str(item))
+        if "\n" in text:
+            labels.append(text)
+        else:
+            labels.append(fill(text, width=width, break_long_words=False))
+    return labels
 
 
 def apply_axis_style(ax: plt.Axes) -> None:
@@ -27,10 +73,10 @@ def apply_axis_style(ax: plt.Axes) -> None:
 def render_accuracy(df: pd.DataFrame) -> None:
     display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
     labels = wrapped_labels(display)
-    fig, ax = plt.subplots(figsize=(7.6, 5.0), dpi=220)
+    fig, ax = plt.subplots(figsize=(7.8, 5.3), dpi=220)
     bars = ax.bar(range(len(df)), df["pr_auc"], color="white", edgecolor="black", linewidth=1.2)
     ax.set_xticks(range(len(df)), labels)
-    ax.set_xlabel("Validation scenarios", fontsize=13)
+    ax.set_xlabel("验证方案", fontsize=13)
     ax.set_ylabel("PR-AUC", fontsize=13)
     ax.set_ylim(0.82, 0.94)
     apply_axis_style(ax)
@@ -44,11 +90,11 @@ def render_accuracy(df: pd.DataFrame) -> None:
 def render_qps(df: pd.DataFrame) -> None:
     display = df["scheme_desc"] if "scheme_desc" in df.columns else df["scheme"]
     labels = wrapped_labels(display)
-    fig, ax = plt.subplots(figsize=(7.6, 5.0), dpi=220)
+    fig, ax = plt.subplots(figsize=(7.8, 5.3), dpi=220)
     bars = ax.bar(range(len(df)), df["qps"], color="#D1D1D1", edgecolor="black", linewidth=1.2)
     ax.set_xticks(range(len(df)), labels)
-    ax.set_xlabel("Validation scenarios", fontsize=13)
-    ax.set_ylabel("QPS", fontsize=13)
+    ax.set_xlabel("验证方案", fontsize=13)
+    ax.set_ylabel("吞吐率（QPS）", fontsize=13)
     ax.set_ylim(0, 5200)
     apply_axis_style(ax)
     for rect, value in zip(bars, df["qps"]):
@@ -61,7 +107,7 @@ def render_qps(df: pd.DataFrame) -> None:
 def render_tradeoff(df: pd.DataFrame) -> None:
     markers = ["o", "s", "^", "d"]
     line_styles = ["-", "--", "-.", ":"]
-    fig, ax = plt.subplots(figsize=(7.8, 5.2), dpi=220)
+    fig, ax = plt.subplots(figsize=(8.2, 5.8), dpi=220)
     for idx, row in df.iterrows():
         ax.plot(
             [row["qps"]],
@@ -72,7 +118,7 @@ def render_tradeoff(df: pd.DataFrame) -> None:
             markersize=7.5,
             markerfacecolor="white",
             linewidth=1.4,
-            label=row["scheme_desc"] if "scheme_desc" in df.columns else row["scheme"],
+            label=LEGEND_LABELS.get(row["scheme_desc"] if "scheme_desc" in df.columns else row["scheme"], row["scheme_desc"] if "scheme_desc" in df.columns else row["scheme"]),
         )
         xoff, yoff, halign = tradeoff_label_offset(idx)
         ax.text(
@@ -82,13 +128,13 @@ def render_tradeoff(df: pd.DataFrame) -> None:
             fontsize=9.2,
             ha=halign,
         )
-    ax.set_xlabel("QPS", fontsize=13)
+    ax.set_xlabel("吞吐率（QPS）", fontsize=13)
     ax.set_ylabel("PR-AUC", fontsize=13)
     ax.set_xlim(2500, 4800)
     ax.set_ylim(0.83, 0.936)
     apply_axis_style(ax)
-    ax.legend(loc="lower left", frameon=False, fontsize=10.5)
-    fig.tight_layout()
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.16), ncol=2, frameon=False, fontsize=10.4)
+    fig.tight_layout(rect=(0, 0, 1, 0.92))
     fig.savefig(ROOT / "fig6_6_fusion_tradeoff.png", bbox_inches="tight")
     plt.close(fig)
 
@@ -104,6 +150,7 @@ def tradeoff_label_offset(index: int) -> tuple[float, float, str]:
 
 
 def main() -> None:
+    setup_cjk_font()
     df = pd.read_csv(CSV_PATH)
     render_accuracy(df)
     render_qps(df)

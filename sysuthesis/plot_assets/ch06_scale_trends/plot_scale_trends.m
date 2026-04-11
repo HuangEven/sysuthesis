@@ -2,6 +2,7 @@ function plot_scale_trends()
 % 绘制图6-8：不同规模下系统表现趋势图
 
 root_dir = fileparts(mfilename('fullpath'));
+font_name = 'Songti SC';
 csv_path = fullfile(root_dir, 'scale_trends.csv');
 out_path = fullfile(root_dir, 'fig6_8_scale_trends.png');
 
@@ -15,7 +16,7 @@ else
 end
 scale_labels = {'1M', '10M', '50M', '100M'};
 metrics = {'qps', 'p99_latency_ms', 'pr_auc'};
-ylabels = {'QPS', 'Latency (ms)', 'PR-AUC'};
+ylabels = {'吞吐率（QPS）', '延迟（毫秒）', 'PR-AUC'};
 y_lims = [0 4700; 0 140; 0.76 0.915];
 markers = {'o', 's'};
 line_styles = {'-', '--'};
@@ -35,29 +36,29 @@ for m = 1:numel(metrics)
             'Marker', markers{s}, ...
             'MarkerSize', 6.8, ...
             'MarkerFaceColor', 'w', ...
-            'DisplayName', schemes{s});
+            'DisplayName', translate_scheme_label(schemes{s}));
         for j = 1:height(subset)
             offset = metric_offset(metrics{m});
             text(ax, j, subset.(metrics{m})(j) + offset, sprintf(metric_format(metrics{m}), subset.(metrics{m})(j)), ...
                 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
-                'FontName', 'Times New Roman', 'FontSize', 9.3);
+                'FontName', font_name, 'FontSize', 9.3);
         end
     end
-    apply_axis_style(ax);
+    apply_axis_style(ax, font_name);
     xticks(ax, 1:4);
     xticklabels(ax, scale_labels);
-    xlabel(ax, 'Data Scale', 'FontName', 'Times New Roman', 'FontSize', 13);
-    ylabel(ax, ylabels{m}, 'FontName', 'Times New Roman', 'FontSize', 13);
+    xlabel(ax, '数据规模', 'FontName', font_name, 'FontSize', 13);
+    ylabel(ax, ylabels{m}, 'FontName', font_name, 'FontSize', 13);
     ylim(ax, y_lims(m, :));
-    legend(ax, 'Location', 'best', 'Box', 'off', 'FontName', 'Times New Roman');
+    legend(ax, 'Location', 'northoutside', 'Orientation', 'horizontal', 'NumColumns', 2, 'Box', 'off', 'FontName', font_name);
 end
 
 exportgraphics(fig, out_path, 'Resolution', 220);
 close(fig);
 end
 
-function apply_axis_style(ax)
-ax.FontName = 'Times New Roman';
+function apply_axis_style(ax, font_name)
+ax.FontName = font_name;
 ax.FontSize = 12;
 ax.LineWidth = 1.0;
 ax.Box = 'off';
@@ -87,5 +88,16 @@ switch metric
         format_spec = '%.2f';
     otherwise
         format_spec = '%.4f';
+end
+end
+
+function label = translate_scheme_label(value)
+switch string(value)
+    case 'Initial fusion pipeline'
+        label = '初步融合方案';
+    case 'Full fusion pipeline'
+        label = '完整融合方案';
+    otherwise
+        label = char(value);
 end
 end
